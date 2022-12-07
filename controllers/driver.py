@@ -1,9 +1,50 @@
 import itertools
+import json
 import math
 import numpy as np
 import random
-
 from vehicle import Driver
+
+
+
+class AsdfAlgorithm:#################TODO: RENAME ME!
+    def __init__(self, epsilon=0.1, discount_factor=0.999):
+        self.epsilon = epsilon
+        self.discount_factor = discount_factor
+
+    def get_next_action(self, q_matrix, current_state):
+        state = current_state.minimized_state
+        if random.random() < self.epsilon:
+            # print("random action!")
+            return VehicleAction.generate_random_action()
+        else:
+            # print("best known action")
+            return max(q_matrix[state].keys(), key=lambda a: q_matrix[state][a])
+
+
+    def update_q(self, q_matrix, trajectory, step_size):####TODO: CHECK ME WELL.
+        #Iterate backwards through the trajectory and calculate the reward for each state.
+        #Go backwards so the reward is attributed to the first instance of the state.
+        state_rewards = {}
+        reward_sum = 0
+        for trajectory_point in reversed(trajectory):
+            reward_sum = (reward_sum * self.discount_factor) + trajectory_point.reward#############TODO: DISCOUNT FACTOR I THINK!!!
+            state = trajectory_point.state.minimized_state##############TODO: MINIMIZED STATE IS UGLY!!! PROBABLY MAKE A MORE MINIMAL OBJECT THAT GOES IN THE STATE OBJECT.
+            if state not in state_rewards:
+                state_rewards[state] = {}
+            state_rewards[state][trajectory_point.action] = reward_sum
+
+        for state in state_rewards.keys():
+            for action in state_rewards[state].keys():
+                print("updating q", state, action, state_rewards[state][action])
+                try:
+                    q_matrix[state][action] += step_size * (state_rewards[state][action] - q_matrix[state][action])
+                except KeyError:
+                    import pdb; pdb.set_trace()
+
+
+
+
 
 
 class VehicleState:
@@ -23,12 +64,9 @@ class VehicleState:
         self.checkpoint_count = checkpoint_count
         self.crossed_finishline = crossed_finishline
 
+
     def enumerate_val(self, val, thresholds):###todo: maybe get a new name.
         return min(thresholds, key=lambda thresh: abs(val-thresh))
-        # for i, thresh in enumerate(thresholds):###todo: maybe this should be more of a rounding function than changing to integer enumerations.
-        #     if val < thresh:
-        #         return i
-        # return i + 1
 
     @property
     def minimized_state(self):
@@ -63,6 +101,12 @@ class VehicleAction:
 
     def __repr__(self):
         return f"VehicleAction({self.speed}, {self.angle})"
+    
+    def __hash__(self):
+        return hash(self.to_list())
+    
+    def __eq__(self, other):
+        return self.to_list() == other.to_list()
 
     @classmethod
     def generate_random_action(cls):
@@ -72,39 +116,12 @@ class VehicleAction:
         return self.speed, self.angle
 
 
-def generate_random_q(lidar_laser_count):#############TODO: WHAT RANDOM VALUES SHOULD BE USED?
+def generate_random_q(lidar_laser_count):
     q = {}
     for state in VehicleState.generate_all_minimized_states(lidar_laser_count):
         q[state] = {action: random.random() for action in VehicleAction.generate_all_action_pairs()}
     return q
 
-def get_next_action(q, s:VehicleState, epsilon:float):
-    if random.random() < epsilon:
-        # print("random action!")
-        return VehicleAction.generate_random_action()
-    else:
-        # print("best known action")
-        return max(q[s].keys(), key=lambda a: q[s][a])
-
-
-
-def update_q(q_matrix, trajectory, step_size, discount_factor=0.999):####TODO: CHECK ME WELL.
-    # for i in range(len(trajectory)-1):
-    #Iterate backwards through the trajectory and calculate the reward for each state.
-    #Go backwards so the reward is attributed to the first instance of the state.
-    state_rewards = {}
-    reward_sum = 0
-    for trajectory_point in reversed(trajectory):
-        reward_sum = (reward_sum * discount_factor) + trajectory_point.reward#############TODO: DISCOUNT FACTOR I THINK!!!
-        state = trajectory_point.state.minimized_state##############TODO: MINIMIZED STATE IS UGLY!!! PROBABLY MAKE A MORE MINIMAL OBJECT THAT GOES IN THE STATE OBJECT.
-        if state not in state_rewards:
-            state_rewards[state] = {}
-        state_rewards[state][trajectory_point.action] = reward_sum
-
-    for state in state_rewards.keys():
-        for action in state_rewards[state].keys():
-            print("updating q", state, action, state_rewards[state][action])
-            q_matrix[state][action] += step_size * (state_rewards[state][action] - q_matrix[state][action])
 
 
 class CheckpointData:
@@ -248,9 +265,15 @@ class VehicleManager:
         return self.driver.step()
 
 def calculate_reward(state, action, crash_penalty=3):
-    return int(crossing_checkpoint) - (crash_penalty * int(state.crashed))
+    return int(state.crossing_checkpoint) - (crash_penalty * int(state.crashed))
 
 
+def save_info(path, iteration_count, car, total_reward):
+    print("saving")
+    with open(path, "a") as fout:
+        fout.write(json.dumps({"iteration_count": iteration_count,
+                                "checkpoint_count": car.checkpoint_count,
+                                "total_reward": total_reward}))
 
 
 def run(car):
@@ -268,16 +291,19 @@ def run(car):
     race_counter = 1
     discount_factor = 0.99
 
+    output_file_path = "c:\\temp\\rlRacerOut.txt"###todo: maybe need to pass this in via command line.
+
+    algo = AsdfAlgorithm(epsilon, discount_factor)
+
     while car.step() != -1:
 
         current_state = car.get_state()
-        action_values = q_matrix[current_state.minimized_state]
         #Choose an action
-        next_action = get_next_action(q_matrix, current_state.minimized_state, epsilon)
+        next_action = algo.get_next_action(q_matrix, current_state)
         # print("picked action", next_action)
         car.execute_action(next_action.to_list())
 
-        reward = calculate_reward(current_state, next_action)###TODO: DISCOUNTED REWARD?
+        reward = calculate_reward(current_state, next_action)
 
         trajectory.append(TrajectoryTriplet(current_state, next_action, reward))
 
@@ -295,9 +321,11 @@ def run(car):
             race_over = True
 
         if race_over:
+            total_reward = sum(t.reward for t in trajectory)
+            save_info(output_file_path, race_counter, car, total_reward)
             car.reset_car()
             step_size = 1 / race_counter###todo: what should this be?
-            update_q(q_matrix, trajectory, step_size, discount_factor)
+            algo.update_q(q_matrix, trajectory, step_size)
             race_counter += 1
             trajectory = []
             race_time = 0
