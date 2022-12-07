@@ -1,4 +1,4 @@
-#VRML_SIM R2022b utf8
+#VRML_SIM R2023a utf8
 
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/objects/backgrounds/protos/TexturedBackground.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/objects/backgrounds/protos/TexturedBackgroundLight.proto"
@@ -8,8 +8,8 @@ EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/project
 WorldInfo {
 }
 Viewpoint {
-  orientation -0.13219225920496813 -0.6844171452955505 0.7170065396018194 5.756921405632236
-  position -2.440125101701037 1.697931022098865 1.4717429646798172
+  orientation -0.17923312937113114 -0.15096598226335878 0.9721546983557146 4.513833478496521
+  position 0.39283644039879856 1.057106076561537 0.5190355449444681
 }
 TexturedBackground {
 }
@@ -19,8 +19,8 @@ DEF floor RectangleArena {
   floorSize 4 4
 }
 DEF the_car Robot {
-  translation 0.2593662241911383 3.450311086157276e-16 0.015544399340484884
-  rotation 8.673010001994428e-13 1 9.761187877718289e-14 0.02536094160652911
+  translation 0.2591098283322282 2.834833250707877e-16 0.01746972450401339
+  rotation 7.153874389498984e-13 1 5.123765183598789e-13 0.012842828483906181
   children [
     GPS {
       translation 0.14 0 0
@@ -39,14 +39,14 @@ DEF the_car Robot {
       children [
         DEF LEFT_STEER_HINGE2 Hinge2Joint {
           jointParameters HingeJointParameters {
-            position -1.0558759431500138e-12
+            position -1.1891027061050326e-12
             axis 0 0 -1
             suspensionSpringConstant 100000
             suspensionDampingConstant 4000
             suspensionAxis 0 0 1
           }
           jointParameters2 JointParameters {
-            position 1.246582841418429e-07
+            position 2.201909246406173e-07
             axis -1 0 0
             dampingConstant 5
           }
@@ -82,7 +82,7 @@ DEF the_car Robot {
             endPoint Slot {
               type "vehicle wheel"
               endPoint Solid {
-                rotation -0.9999999999641281 -5.279379715560688e-13 8.470162656103174e-06 1.2287812309317772e-07
+                rotation -0.9999999999854182 -5.945513530438466e-13 5.400325685667891e-06 2.210199382035633e-07
                 children [
                   DEF WHEEL_SLOT Group {
                   }
@@ -197,14 +197,14 @@ DEF the_car Robot {
       children [
         DEF RIGHT_STEER_HINGE2 Hinge2Joint {
           jointParameters HingeJointParameters {
-            position 1.054387601229602e-12
+            position 1.1917271106371573e-12
             axis 0 0 -1
             suspensionSpringConstant 100000
             suspensionDampingConstant 4000
             suspensionAxis 0 0 1
           }
           jointParameters2 JointParameters {
-            position 1.2465827287720276e-07
+            position 2.201909058388951e-07
             axis 1 0 0
             dampingConstant 5
           }
@@ -240,7 +240,7 @@ DEF the_car Robot {
             endPoint Slot {
               type "vehicle wheel"
               endPoint Solid {
-                rotation 0.9999999999642292 -5.271938005959428e-13 -8.458224046072985e-06 1.2287812309317772e-07
+                rotation 0.9999999999853539 -5.958635553098516e-13 -5.412244915744329e-06 2.210199382035633e-07
                 children [
                   DEF WHEEL_SLOT Group {
                   }
@@ -355,7 +355,7 @@ DEF the_car Robot {
       children [
         DEF LEFT_REAR_WHEEL_HINGE HingeJoint {
           jointParameters HingeJointParameters {
-            position -6.747010343044089e-08
+            position -1.6224916111883977e-07
             axis -1 0 0
             dampingConstant 5
             suspensionSpringConstant 100000
@@ -382,7 +382,7 @@ DEF the_car Robot {
             endPoint Slot {
               type "vehicle wheel"
               endPoint Solid {
-                rotation 1 0 0 6.664001874625056e-08
+                rotation 1 0 0 1.632340423778195e-07
                 children [
                   DEF WHEEL_SLOT Group {
                   }
@@ -497,7 +497,7 @@ DEF the_car Robot {
       children [
         DEF RIGHT_REAR_WHEEL_HINGE HingeJoint {
           jointParameters HingeJointParameters {
-            position -6.747009814249774e-08
+            position -1.622491454027938e-07
             dampingConstant 5
             suspensionSpringConstant 100000
             suspensionDampingConstant 4000
@@ -523,7 +523,7 @@ DEF the_car Robot {
             endPoint Slot {
               type "vehicle wheel"
               endPoint Solid {
-                rotation -1 0 0 6.664001874625056e-08
+                rotation -1 0 0 1.632340423778195e-07
                 children [
                   DEF WHEEL_SLOT Group {
                   }
@@ -699,6 +699,8 @@ DEF the_car Robot {
   controller "<extern>"
   customData "0.1 0.08 0.08 0.02 0.02 700 5 E 0.1 1 1 250 150 0.1 0 0.25 3000 1000 2 4 -30 30 none "
   supervisor TRUE
+  linearVelocity -0.003651817632722086 3.791513341884897e-15 0.020878241728604283
+  angularVelocity -1.3431592564942245e-13 -0.10356386427717573 1.1089316708289617e-13
 }
 DEF the_wall Wall {
   translation 0.79 0 0
@@ -707,11 +709,11 @@ DEF the_wall Wall {
 DEF CHECKPOINTS Group {
   children [
     Solid {
-      translation -0.17 0 0.05
+      translation 0.47 0 0.05
       children [
         DEF CHECKPOINT_SHAPE Shape {
           appearance PBRAppearance {
-            baseColor 0 1 1
+            baseColor 1 0 0
             transparency 0.2
           }
           geometry Box {
@@ -723,7 +725,7 @@ DEF CHECKPOINTS Group {
       name "solid(1)"
     }
     Solid {
-      translation 0 0 0.04
+      translation 0.48 0 0.04
       children [
         USE CHECKPOINT_SHAPE
       ]
