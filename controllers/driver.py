@@ -286,7 +286,7 @@ def run(car):
 
     race_time = 0
 
-    MAX_RACE_TIME = 10
+    MAX_EPISODE_TIME = 10
 
     race_counter = 1
     discount_factor = 0.99
@@ -294,6 +294,7 @@ def run(car):
     output_file_path = "c:\\temp\\rlRacerOut.txt"###todo: maybe need to pass this in via command line.
 
     algo = AsdfAlgorithm(epsilon, discount_factor)
+    total_race_reward = 0
 
     while car.step() != -1:
 
@@ -307,28 +308,40 @@ def run(car):
 
         trajectory.append(TrajectoryTriplet(current_state, next_action, reward))
 
-        race_time += car.timestep / 1000
+        episode_time += car.timestep / 1000
 
         race_over = False
-        if race_time >= MAX_RACE_TIME:
+        episode_over = False
+
+        if episode_time >= MAX_EPISODE_TIME:##todo: change to episode time?
             print("timeout!")
             race_over = True
+            episode_over = True
         if current_state.crashed:
             print("crashed!")
             race_over = True
+            episode_over = True
         if current_state.crossed_finishline:
             print("crossed finishline!!")
             race_over = True
-
-        if race_over:
-            total_reward = sum(t.reward for t in trajectory)
-            save_info(output_file_path, race_counter, car, total_reward)
-            car.reset_car()
+            episode_over = True
+        if current_state.crossed_checkpoint:
+            episode_over = True
+            print("crossed checkpoint")
+        
+        if episode_over:
+            total_race_reward += sum(t.reward for t in trajectory)
             step_size = 1 / race_counter###todo: what should this be?
             algo.update_q(q_matrix, trajectory, step_size)
-            race_counter += 1
             trajectory = []
-            race_time = 0
+            episode_time = 0
+
+
+        if race_over:
+            save_info(output_file_path, race_counter, car, total_race_reward)  # NOTE: Saved reward is that of the whole race and not a single episode.
+            car.reset_car()
+            race_counter += 1
+            total_race_reward = 0
 
 
 
