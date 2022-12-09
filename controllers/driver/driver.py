@@ -22,7 +22,7 @@ class AsdfAlgorithm:#################TODO: RENAME ME!
             return max(q_matrix[state].keys(), key=lambda a: q_matrix[state][a])
 
 
-    def update_q(self, q_matrix, trajectory, step_size):####TODO: CHECK ME WELL.
+    def update_q(self, q_matrix, trajectory, step_size):####TODO: CHECK ME WELL.       ######################TODO: MAKE THIS WORK WITH AN AVERAGED TARGET OVER MULTIPLE EPISODES WITH THE SAME Q VALUES(?) RESPONSE FROM DR. TRIPATHY ABOUT THIS?
         #Iterate backwards through the trajectory and calculate the reward for each state.
         #Go backwards so the reward is attributed to the first instance of the state.
         state_rewards = {}
@@ -51,6 +51,7 @@ class VehicleState:
     LIDAR_THRESHOLDS = (0.25, 1, 5)
     SPEED_THRESHOLDS = (0.25, 0.75, 1.25)
     def __init__(self, lidar_vals, speed, crossing_checkpoint, crashed, checkpoint_count, crossed_finishline, quantize_values=True):####TODO: SHOULD CHECKPOINT COUNT BE HERE? SHOULD IT BE A BOOLEAN VALUE TO SAY WHETHER IT IS CROSSING A CHECKPOINT?
+        print("lidar", lidar_vals)
         if quantize_values:
             self.lidar_vals = tuple(self.enumerate_val(v, self.LIDAR_THRESHOLDS) for v in lidar_vals)
         else:
@@ -194,7 +195,7 @@ class VehicleManager:
         self.starting_rotation = self.rotation_field.getSFRotation()
 
         #Enable contact tracking
-        # self.car_node.enableContactPointTracking(self.timestep)########TODO: ADD ME BACK!
+        self.car_node.enableContactPointsTracking(self.timestep)########TODO: ADD ME BACK!
 
         self.load_checkpoint_info()
 
@@ -205,7 +206,7 @@ class VehicleManager:
         checkpoint_count = checkpoint_group_values.getCount()
         self.checkpoints = []
         for i in range(checkpoint_count):##########TODO: MAKE SURE THE CHECKPOINTS COME THROUGH IN THE RIGHT ORDER!!!
-            cp_solid = checkpoint_group_values.getMFNode(0)
+            cp_solid = checkpoint_group_values.getMFNode(i)
             cp_pose = cp_solid.getPose()
             cp_pose = np.array(cp_pose).reshape((4,4))
             cp_shape = cp_solid.getField("children").getMFNode(0)  # NOTE: THIS ASSUMES THAT SHAPE IS THE FIRST CHILD OF THE SOLID!
@@ -232,6 +233,7 @@ class VehicleManager:
             next_cp = self.checkpoints[self.checkpoint_count]####todo: will this run off the edge after hitting the last checkpoint???
             gps_coord = self.gps_sensor.getValues()
             if next_cp.contains_point(gps_coord):
+                print("just hit checkpoint", self.checkpoint_count)
                 next_cp.set_cp_color((0, 1, 0))
                 self.checkpoint_count += 1
                 crossing_checkpoint = True
@@ -239,6 +241,8 @@ class VehicleManager:
             print("final checkpoint reached but race didn't finish?")
         
         crossed_finishline = self.checkpoint_count == len(self.checkpoints)
+        if crossed_finishline:
+            print("asdfasdf", self.checkpoint_count, len(self.checkpoints))
         return VehicleState(lidar_value, speed, crossing_checkpoint, self.crashed, self.checkpoint_count, crossed_finishline)
 
     def execute_action(self, speed_angle):#########TODO: MAX SPEED OF 1.8???
@@ -256,6 +260,9 @@ class VehicleManager:
         for checkpoint in self.checkpoints:
             checkpoint.set_cp_color((1, 0, 0))
         self.checkpoint_count = 0
+        self.crashed = False
+        car.step()
+        print("stepped!")##################TODO: REMOEV ME????
 
     def check_for_collisions(self):
         collisions = self.car_node.getContactPoints()
@@ -282,7 +289,6 @@ def run(car):
 
     q_matrix = generate_random_q(LIDAR_LASER_COUNT)
     epsilon = 0.1
-    trajectory = []#########todo: do we need to actually store this? I think so.
 
     race_time = 0
 
@@ -294,7 +300,8 @@ def run(car):
     output_file_path = "c:\\temp\\rlRacerOut.txt"###todo: maybe need to pass this in via command line.
 
     algo = AsdfAlgorithm(epsilon, discount_factor)
-    total_race_reward = 0
+    trajectory = []
+    episode_time = 0
 
     while car.step() != -1:
 
@@ -310,40 +317,31 @@ def run(car):
 
         episode_time += car.timestep / 1000
 
-        race_over = False
-        episode_over = False
 
+        race_over = False
         if episode_time >= MAX_EPISODE_TIME:##todo: change to episode time?
             print("timeout!")
             race_over = True
-            episode_over = True
         if current_state.crashed:
             print("crashed!")
             race_over = True
-            episode_over = True
         if current_state.crossed_finishline:
             print("crossed finishline!!")
             race_over = True
-            episode_over = True
-        if current_state.crossed_checkpoint:
-            episode_over = True
-            print("crossed checkpoint")
-        
-        if episode_over:
-            total_race_reward += sum(t.reward for t in trajectory)
+
+        if race_over:
+            total_race_reward = sum(t.reward for t in trajectory)######################                         TODO: MAKE IT SO WE CAN RUN THE SAME Q VALUES MULTIPLE TIMES AND AVERAGE THEM TOGETHER.
             step_size = 1 / race_counter###todo: what should this be?
             algo.update_q(q_matrix, trajectory, step_size)
             trajectory = []
             episode_time = 0
-
-
-        if race_over:
             save_info(output_file_path, race_counter, car, total_race_reward)  # NOTE: Saved reward is that of the whole race and not a single episode.
             car.reset_car()
             race_counter += 1
+            print("race counter:", race_counter)
             total_race_reward = 0
 
-
+print("hi")
 
 car = VehicleManager()
 run(car)

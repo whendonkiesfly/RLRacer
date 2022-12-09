@@ -1,26 +1,39 @@
-#VRML_SIM R2023a utf8
+#VRML_SIM R2022b utf8
 
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/objects/backgrounds/protos/TexturedBackground.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/objects/backgrounds/protos/TexturedBackgroundLight.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/objects/floors/protos/RectangleArena.proto"
-EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/objects/apartment_structure/protos/Wall.proto"
 
 WorldInfo {
 }
 Viewpoint {
-  orientation -0.17923312937113114 -0.15096598226335878 0.9721546983557146 4.513833478496521
-  position 0.39283644039879856 1.057106076561537 0.5190355449444681
+  orientation 0.07833957759330029 0.9960579483341768 0.041610985842845546 1.5239471096453128
+  position 0.0003409803837721159 0.03267735715966702 10.958532210163149
 }
 TexturedBackground {
 }
 TexturedBackgroundLight {
 }
 DEF floor RectangleArena {
-  floorSize 4 4
+  floorSize 5 5
+}
+Solid {
+  rotation 1 0 0 1.5708
+  children [
+    DEF WALL_SHAPE Shape {
+      geometry Mesh {
+        url [
+          "Track1.STL"
+        ]
+      }
+    }
+  ]
+  name "walls"
+  boundingObject USE WALL_SHAPE
 }
 DEF the_car Robot {
-  translation 0.2591098283322282 2.834833250707877e-16 0.01746972450401339
-  rotation 7.153874389498984e-13 1 5.123765183598789e-13 0.012842828483906181
+  translation -1.20933 1.85 0.00999924
+  rotation -2.6463944110754846e-05 0.9999909209751591 0.004261134463154432 0.012140866560459602
   children [
     GPS {
       translation 0.14 0 0
@@ -39,14 +52,14 @@ DEF the_car Robot {
       children [
         DEF LEFT_STEER_HINGE2 Hinge2Joint {
           jointParameters HingeJointParameters {
-            position -1.1891027061050326e-12
+            position 0.05844266048124876
             axis 0 0 -1
             suspensionSpringConstant 100000
             suspensionDampingConstant 4000
             suspensionAxis 0 0 1
           }
           jointParameters2 JointParameters {
-            position 2.201909246406173e-07
+            position 0.24192398961066347
             axis -1 0 0
             dampingConstant 5
           }
@@ -82,7 +95,7 @@ DEF the_car Robot {
             endPoint Slot {
               type "vehicle wheel"
               endPoint Solid {
-                rotation -0.9999999999854182 -5.945513530438466e-13 5.400325685667891e-06 2.210199382035633e-07
+                rotation -0.971892526632972 0.02840807869435875 -0.23370472340086051 0.2488495239473626
                 children [
                   DEF WHEEL_SLOT Group {
                   }
@@ -197,14 +210,14 @@ DEF the_car Robot {
       children [
         DEF RIGHT_STEER_HINGE2 Hinge2Joint {
           jointParameters HingeJointParameters {
-            position 1.1917271106371573e-12
+            position 0.0687163907666108
             axis 0 0 -1
             suspensionSpringConstant 100000
             suspensionDampingConstant 4000
             suspensionAxis 0 0 1
           }
           jointParameters2 JointParameters {
-            position 2.201909058388951e-07
+            position 0.20697061970886468
             axis 1 0 0
             dampingConstant 5
           }
@@ -240,7 +253,7 @@ DEF the_car Robot {
             endPoint Slot {
               type "vehicle wheel"
               endPoint Solid {
-                rotation 0.9999999999853539 -5.958635553098516e-13 -5.412244915744329e-06 2.210199382035633e-07
+                rotation 0.9488535820731969 -0.03261373111964665 -0.31402742607823025 0.2180410748511747
                 children [
                   DEF WHEEL_SLOT Group {
                   }
@@ -355,7 +368,7 @@ DEF the_car Robot {
       children [
         DEF LEFT_REAR_WHEEL_HINGE HingeJoint {
           jointParameters HingeJointParameters {
-            position -1.6224916111883977e-07
+            position 0.23781032246432568
             axis -1 0 0
             dampingConstant 5
             suspensionSpringConstant 100000
@@ -382,7 +395,7 @@ DEF the_car Robot {
             endPoint Slot {
               type "vehicle wheel"
               endPoint Solid {
-                rotation 1 0 0 1.632340423778195e-07
+                rotation -1 0 0 0.23781032246432493
                 children [
                   DEF WHEEL_SLOT Group {
                   }
@@ -497,7 +510,7 @@ DEF the_car Robot {
       children [
         DEF RIGHT_REAR_WHEEL_HINGE HingeJoint {
           jointParameters HingeJointParameters {
-            position -1.622491454027938e-07
+            position 0.20213755611853246
             dampingConstant 5
             suspensionSpringConstant 100000
             suspensionDampingConstant 4000
@@ -523,7 +536,7 @@ DEF the_car Robot {
             endPoint Slot {
               type "vehicle wheel"
               endPoint Solid {
-                rotation -1 0 0 1.632340423778195e-07
+                rotation 1 0 0 0.20213755611853143
                 children [
                   DEF WHEEL_SLOT Group {
                   }
@@ -696,20 +709,14 @@ DEF the_car Robot {
     mass 2
   }
   radarCrossSection 100
-  controller "<extern>"
+  controller "driver"
   customData "0.1 0.08 0.08 0.02 0.02 700 5 E 0.1 1 1 250 150 0.1 0 0.25 3000 1000 2 4 -30 30 none "
   supervisor TRUE
-  linearVelocity -0.003651817632722086 3.791513341884897e-15 0.020878241728604283
-  angularVelocity -1.3431592564942245e-13 -0.10356386427717573 1.1089316708289617e-13
-}
-DEF the_wall Wall {
-  translation 0.79 0 0
-  size 0.2 4 2.4
 }
 DEF CHECKPOINTS Group {
   children [
     Solid {
-      translation 0.47 0 0.05
+      translation -0.35 1.88 0.84
       children [
         DEF CHECKPOINT_SHAPE Shape {
           appearance PBRAppearance {
@@ -717,18 +724,60 @@ DEF CHECKPOINTS Group {
             transparency 0.2
           }
           geometry Box {
-            size 0.1 0.1 0.1
+            size 0.1 1.1 0.5
           }
           castShadows FALSE
         }
       ]
-      name "solid(1)"
+      name "Checkpoint 1"
     }
     Solid {
-      translation 0.48 0 0.04
+      translation 1.27 1.32 0.84
+      rotation 0 0 1 -0.785395307179586
       children [
         USE CHECKPOINT_SHAPE
       ]
+      name "Checkpoint 2"
+    }
+    Solid {
+      translation 1.171 0.330062 0.82
+      rotation 0 0 1 0.785401
+      children [
+        USE CHECKPOINT_SHAPE
+      ]
+      name "Checkpoint 3"
+    }
+    Solid {
+      translation 0.314911 0.328308 0.87
+      rotation 0 0 1 2.618
+      children [
+        USE CHECKPOINT_SHAPE
+      ]
+      name "Checkpoint 4"
+    }
+    Solid {
+      translation -1.0527 0.159508 0.91
+      rotation 0 0 1 -2.0943853071795866
+      children [
+        USE CHECKPOINT_SHAPE
+      ]
+      name "Checkpoint 5"
+    }
+    Solid {
+      translation -0.919539 -1.12981 0.9
+      rotation 0 0 1 2.618
+      children [
+        USE CHECKPOINT_SHAPE
+      ]
+      name "Checkpoint 6"
+    }
+    Solid {
+      translation 0.0875079 -1.42867 0.84
+      rotation 0 0 1 2.8798
+      children [
+        USE CHECKPOINT_SHAPE
+      ]
+      name "Finish Line"
     }
   ]
 }
