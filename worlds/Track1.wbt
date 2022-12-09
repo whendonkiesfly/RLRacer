@@ -7,8 +7,8 @@ EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/project
 WorldInfo {
 }
 Viewpoint {
-  orientation 0.07833957759330029 0.9960579483341768 0.041610985842845546 1.5239471096453128
-  position 0.0003409803837721159 0.03267735715966702 10.958532210163149
+  orientation 0.43964240229823087 0.5818842983289858 -0.6841967710093525 1.3509512137217778
+  position -2.2494298610074406 2.552877074581676 4.564962501924892
 }
 TexturedBackground {
 }
@@ -21,6 +21,10 @@ Solid {
   rotation 1 0 0 1.5708
   children [
     DEF WALL_SHAPE Shape {
+      appearance PBRAppearance {
+        baseColor 1 1 0.8
+        metalness 0.25
+      }
       geometry Mesh {
         url [
           "Track1.STL"
@@ -41,7 +45,8 @@ DEF the_car Robot {
     Lidar {
       translation 0.11 0 0.04
       rotation 0 1 0 0
-      horizontalResolution 4
+      horizontalResolution 6
+      fieldOfView 3.14159
       verticalFieldOfView 0.1
       numberOfLayers 1
       maxRange 4
@@ -718,12 +723,12 @@ DEF CHECKPOINTS Group {
     Solid {
       translation -0.35 1.88 0.84
       children [
-        DEF CHECKPOINT_SHAPE Shape {
+        Shape {
           appearance PBRAppearance {
-            baseColor 1 0 0
+            baseColor 0 1 0
             transparency 0.2
           }
-          geometry Box {
+          geometry DEF CHECKPOINT_BOX Box {
             size 0.1 1.1 0.5
           }
           castShadows FALSE
@@ -735,7 +740,13 @@ DEF CHECKPOINTS Group {
       translation 1.27 1.32 0.84
       rotation 0 0 1 -0.785395307179586
       children [
-        USE CHECKPOINT_SHAPE
+        Shape {
+          appearance PBRAppearance {
+            baseColor 1 0 0
+            transparency 0.2
+          }
+          geometry USE CHECKPOINT_BOX
+        }
       ]
       name "Checkpoint 2"
     }
@@ -743,7 +754,13 @@ DEF CHECKPOINTS Group {
       translation 1.171 0.330062 0.82
       rotation 0 0 1 0.785401
       children [
-        USE CHECKPOINT_SHAPE
+        Shape {
+          appearance PBRAppearance {
+            baseColor 1 0 0
+            transparency 0.2
+          }
+          geometry USE CHECKPOINT_BOX
+        }
       ]
       name "Checkpoint 3"
     }
@@ -751,7 +768,13 @@ DEF CHECKPOINTS Group {
       translation 0.314911 0.328308 0.87
       rotation 0 0 1 2.618
       children [
-        USE CHECKPOINT_SHAPE
+        Shape {
+          appearance PBRAppearance {
+            baseColor 1 0 0
+            transparency 0.2
+          }
+          geometry USE CHECKPOINT_BOX
+        }
       ]
       name "Checkpoint 4"
     }
@@ -759,7 +782,13 @@ DEF CHECKPOINTS Group {
       translation -1.0527 0.159508 0.91
       rotation 0 0 1 -2.0943853071795866
       children [
-        USE CHECKPOINT_SHAPE
+        Shape {
+          appearance PBRAppearance {
+            baseColor 1 0 0
+            transparency 0.2
+          }
+          geometry USE CHECKPOINT_BOX
+        }
       ]
       name "Checkpoint 5"
     }
@@ -767,7 +796,13 @@ DEF CHECKPOINTS Group {
       translation -0.919539 -1.12981 0.9
       rotation 0 0 1 2.618
       children [
-        USE CHECKPOINT_SHAPE
+        Shape {
+          appearance PBRAppearance {
+            baseColor 1 0 0
+            transparency 0.2
+          }
+          geometry USE CHECKPOINT_BOX
+        }
       ]
       name "Checkpoint 6"
     }
@@ -775,7 +810,13 @@ DEF CHECKPOINTS Group {
       translation 0.0875079 -1.42867 0.84
       rotation 0 0 1 2.8798
       children [
-        USE CHECKPOINT_SHAPE
+        Shape {
+          appearance PBRAppearance {
+            baseColor 1 0 0
+            transparency 0.2
+          }
+          geometry USE CHECKPOINT_BOX
+        }
       ]
       name "Finish Line"
     }

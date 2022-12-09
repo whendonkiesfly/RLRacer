@@ -8,7 +8,7 @@ from vehicle import Driver
 
 
 class AsdfAlgorithm:#################TODO: RENAME ME!
-    def __init__(self, epsilon=0.1, discount_factor=0.999):
+    def __init__(self, epsilon, discount_factor):
         self.epsilon = epsilon
         self.discount_factor = discount_factor
 
@@ -22,7 +22,7 @@ class AsdfAlgorithm:#################TODO: RENAME ME!
             return max(q_matrix[state].keys(), key=lambda a: q_matrix[state][a])
 
 
-    def update_q(self, q_matrix, trajectory, step_size):####TODO: CHECK ME WELL.       ######################TODO: MAKE THIS WORK WITH AN AVERAGED TARGET OVER MULTIPLE EPISODES WITH THE SAME Q VALUES(?) RESPONSE FROM DR. TRIPATHY ABOUT THIS?
+    def update_q(self, q_matrix, trajectory, step_size, single_state_calculate=False):####TODO: CHECK ME WELL.       ######################TODO: MAKE THIS WORK WITH AN AVERAGED TARGET OVER MULTIPLE EPISODES WITH THE SAME Q VALUES(?)
         #Iterate backwards through the trajectory and calculate the reward for each state.
         #Go backwards so the reward is attributed to the first instance of the state.
         state_rewards = {}
@@ -32,7 +32,20 @@ class AsdfAlgorithm:#################TODO: RENAME ME!
             state = trajectory_point.state.minimized_state##############TODO: MINIMIZED STATE IS UGLY!!! PROBABLY MAKE A MORE MINIMAL OBJECT THAT GOES IN THE STATE OBJECT.
             if state not in state_rewards:
                 state_rewards[state] = {}
-            state_rewards[state][trajectory_point.action] = reward_sum
+            
+            if single_state_calculate:
+                state_rewards[state][trajectory_point.action] = reward_sum
+            else:
+                if trajectory_point.action not in state_rewards[state]:
+                    state_rewards[state][trajectory_point.action] = []
+                state_rewards[state][trajectory_point.action].append(reward_sum)
+
+
+        if not single_state_calculate:
+            for state in state_rewards.keys():
+                for action in state_rewards[state].keys():
+                    rewards = state_rewards[state][action]
+                    state_rewards[state][action] = sum(rewards) / len(rewards)##########################TODO: EITHER DOCUMENT WELL OR REMOVE!!!!
 
         for state in state_rewards.keys():
             for action in state_rewards[state].keys():
@@ -50,7 +63,6 @@ class AsdfAlgorithm:#################TODO: RENAME ME!
 class VehicleState:
     LIDAR_THRESHOLDS = (0.25, 1, 5)
     def __init__(self, lidar_vals, crossing_checkpoint, crashed, checkpoint_count, crossed_finishline, quantize_values=True):####TODO: SHOULD CHECKPOINT COUNT BE HERE? SHOULD IT BE A BOOLEAN VALUE TO SAY WHETHER IT IS CROSSING A CHECKPOINT?
-        print("lidar", lidar_vals)
         if quantize_values:
             self.lidar_vals = tuple(self.enumerate_val(v, self.LIDAR_THRESHOLDS) for v in lidar_vals)
         else:
@@ -164,7 +176,7 @@ class VehicleManager:
         self.starting_rotation = self.rotation_field.getSFRotation()
 
         #Enable contact tracking
-        self.car_node.enableContactPointsTracking(self.timestep)########TODO: ADD ME BACK!
+        self.car_node.enableContactPointsTracking(self.timestep)
 
         self.load_checkpoint_info()
 
@@ -188,7 +200,7 @@ class VehicleManager:
     def get_state(self):
         #####todo: check to see if we are in contact with a checkpoint?
         lidar_value = self.lidar_sensor.getRangeImage()
-        if self.check_for_collisions():#############################################TODO: FIGURE OUT HOW TO SEE A CHECKPOINT!!! MAYBE GPS
+        if self.check_for_collisions():
             print("crashed!!!")
             self.crashed = True
 
@@ -224,8 +236,8 @@ class VehicleManager:
             checkpoint.set_cp_color((1, 0, 0))
         self.checkpoint_count = 0
         self.crashed = False
-        car.step()
-        print("stepped!")##################TODO: REMOEV ME????
+        # car.step()
+        # print("stepped!")##################TODO: REMOEV ME????
 
     def check_for_collisions(self):
         collisions = self.car_node.getContactPoints()
@@ -234,7 +246,7 @@ class VehicleManager:
     def step(self):
         return self.driver.step()
 
-def calculate_reward(state, action, crash_penalty=3):
+def calculate_reward(state, action, crash_penalty=5):
     return int(state.crossing_checkpoint) - (crash_penalty * int(state.crashed))
 
 
@@ -248,14 +260,12 @@ def save_info(path, iteration_count, car, total_reward):
 
 def run(car):
 
-    LIDAR_LASER_COUNT = 4###TODO: GET THIS FROM ENVIRONMENT!
+    LIDAR_LASER_COUNT = 6###TODO: GET THIS FROM ENVIRONMENT!
 
     q_matrix = generate_random_q(LIDAR_LASER_COUNT)
     epsilon = 0.1
 
-    race_time = 0
-
-    MAX_EPISODE_TIME = 10
+    MAX_CHECKPOINT_TIME = 10
 
     race_counter = 1
     discount_factor = 0.99
@@ -265,6 +275,7 @@ def run(car):
     algo = AsdfAlgorithm(epsilon, discount_factor)
     trajectory = []
     episode_time = 0
+    timeout_time = MAX_CHECKPOINT_TIME
 
     while car.step() != -1:
 
@@ -280,9 +291,13 @@ def run(car):
 
         episode_time += car.timestep / 1000
 
+        #If we crossed a checkpoint, give us more time before we timeout.
+        if current_state.crossing_checkpoint:
+            timeout_time = episode_time + MAX_CHECKPOINT_TIME
+            print("new timeout", timeout_time)
 
         race_over = False
-        if episode_time >= MAX_EPISODE_TIME:##todo: change to episode time?
+        if episode_time >= timeout_time:##todo: change to episode time?
             print("timeout!")
             race_over = True
         if current_state.crashed:
@@ -294,10 +309,12 @@ def run(car):
 
         if race_over:
             total_race_reward = sum(t.reward for t in trajectory)######################                         TODO: MAKE IT SO WE CAN RUN THE SAME Q VALUES MULTIPLE TIMES AND AVERAGE THEM TOGETHER.
-            step_size = 1 / race_counter###todo: what should this be?
+            # step_size = 1 / race_counter###todo: what should this be?
+            step_size = 0.025
             algo.update_q(q_matrix, trajectory, step_size)
             trajectory = []
             episode_time = 0
+            timeout_time = MAX_CHECKPOINT_TIME
             save_info(output_file_path, race_counter, car, total_race_reward)  # NOTE: Saved reward is that of the whole race and not a single episode.
             car.reset_car()
             race_counter += 1
@@ -308,3 +325,19 @@ print("hi")
 
 car = VehicleManager()
 run(car)
+
+
+
+
+
+
+
+
+
+
+
+
+#MAJOR TODOS:
+#Look over update algorithm. Not sure why it learns quickly but gets stuck. MAYBE PICK A DIFFERENT ALGORITHM
+#Look over function to save. Probably should put race time in there or something. Maybe discounted reward. Make it format things better. Probably should clear the file the first time.
+#Make script for plotting output of file.
