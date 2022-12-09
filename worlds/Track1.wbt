@@ -7,8 +7,8 @@ EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/project
 WorldInfo {
 }
 Viewpoint {
-  orientation 0.43964240229823087 0.5818842983289858 -0.6841967710093525 1.3509512137217778
-  position -2.2494298610074406 2.552877074581676 4.564962501924892
+  orientation 0.4218110373200581 0.7393378686242273 -0.5248380367438714 1.3167555527111652
+  position -3.2508382938992333 2.690289534633813 6.920212643517232
 }
 TexturedBackground {
 }
@@ -725,7 +725,7 @@ DEF CHECKPOINTS Group {
       children [
         Shape {
           appearance PBRAppearance {
-            baseColor 0 1 0
+            baseColor 1 0 0
             transparency 0.2
           }
           geometry DEF CHECKPOINT_BOX Box {
