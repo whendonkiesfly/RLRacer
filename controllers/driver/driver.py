@@ -49,7 +49,7 @@ class AsdfAlgorithm:#################TODO: RENAME ME!
 
         for state in state_rewards.keys():
             for action in state_rewards[state].keys():
-                print("updating q", state, action, state_rewards[state][action])
+                # print("updating q", state, action, state_rewards[state][action])
                 try:
                     q_matrix[state][action] += step_size * (state_rewards[state][action] - q_matrix[state][action])
                 except KeyError:
@@ -210,7 +210,6 @@ class VehicleManager:
             next_cp = self.checkpoints[self.checkpoint_count]####todo: will this run off the edge after hitting the last checkpoint???
             gps_coord = self.gps_sensor.getValues()
             if next_cp.contains_point(gps_coord):
-                print("just hit checkpoint", self.checkpoint_count)
                 next_cp.set_cp_color((0, 1, 0))
                 self.checkpoint_count += 1
                 crossing_checkpoint = True
@@ -218,8 +217,6 @@ class VehicleManager:
             print("final checkpoint reached but race didn't finish?")
         
         crossed_finishline = self.checkpoint_count == len(self.checkpoints)
-        if crossed_finishline:
-            print("asdfasdf", self.checkpoint_count, len(self.checkpoints))
         return VehicleState(lidar_value, crossing_checkpoint, self.crashed, self.checkpoint_count, crossed_finishline)
 
     def execute_action(self, angle):
@@ -236,8 +233,6 @@ class VehicleManager:
             checkpoint.set_cp_color((1, 0, 0))
         self.checkpoint_count = 0
         self.crashed = False
-        # car.step()
-        # print("stepped!")##################TODO: REMOEV ME????
 
     def check_for_collisions(self):
         collisions = self.car_node.getContactPoints()
@@ -250,15 +245,18 @@ def calculate_reward(state, action, crash_penalty=5):
     return int(state.crossing_checkpoint) - (crash_penalty * int(state.crashed))
 
 
-def save_info(path, iteration_count, car, total_reward):
-    print("saving")
+def initialize_file(path, note):
+    with open(path, "w") as fout:
+        fout.write(note + "\n")
+
+def save_info(path, iteration_count, race_time, missing_checkpoints):
     with open(path, "a") as fout:
         fout.write(json.dumps({"iteration_count": iteration_count,
-                                "checkpoint_count": car.checkpoint_count,
-                                "total_reward": total_reward}))
+                                "race_time": race_time,
+                                "missing_checkpoints": missing_checkpoints}) + "\n")
 
 
-def run(car):
+def run(car, output_file_path):
 
     LIDAR_LASER_COUNT = 6###TODO: GET THIS FROM ENVIRONMENT!
 
@@ -270,12 +268,11 @@ def run(car):
     race_counter = 1
     discount_factor = 0.99
 
-    output_file_path = "c:\\temp\\rlRacerOut.txt"###todo: maybe need to pass this in via command line.
-
     algo = AsdfAlgorithm(epsilon, discount_factor)
     trajectory = []
-    episode_time = 0
+    race_time = 0
     timeout_time = MAX_CHECKPOINT_TIME
+
 
     while car.step() != -1:
 
@@ -289,15 +286,14 @@ def run(car):
 
         trajectory.append(TrajectoryTriplet(current_state, next_action, reward))
 
-        episode_time += car.timestep / 1000
+        race_time += car.timestep / 1000
 
         #If we crossed a checkpoint, give us more time before we timeout.
         if current_state.crossing_checkpoint:
-            timeout_time = episode_time + MAX_CHECKPOINT_TIME
-            print("new timeout", timeout_time)
+            timeout_time = race_time + MAX_CHECKPOINT_TIME
 
         race_over = False
-        if episode_time >= timeout_time:##todo: change to episode time?
+        if race_time >= timeout_time:##todo: change to episode time?
             print("timeout!")
             race_over = True
         if current_state.crashed:
@@ -308,23 +304,26 @@ def run(car):
             race_over = True
 
         if race_over:
-            total_race_reward = sum(t.reward for t in trajectory)######################                         TODO: MAKE IT SO WE CAN RUN THE SAME Q VALUES MULTIPLE TIMES AND AVERAGE THEM TOGETHER.
+            # total_race_reward = sum(t.reward for t in trajectory)######################                         TODO: MAKE IT SO WE CAN RUN THE SAME Q VALUES MULTIPLE TIMES AND AVERAGE THEM TOGETHER.
             # step_size = 1 / race_counter###todo: what should this be?
             step_size = 0.025
+            missing_checkpoints = len(car.checkpoints) - car.checkpoint_count
             algo.update_q(q_matrix, trajectory, step_size)
+            save_info(output_file_path, race_counter, race_time, missing_checkpoints)  # NOTE: Saved reward is that of the whole race and not a single episode.
             trajectory = []
-            episode_time = 0
+            race_time = 0
             timeout_time = MAX_CHECKPOINT_TIME
-            save_info(output_file_path, race_counter, car, total_race_reward)  # NOTE: Saved reward is that of the whole race and not a single episode.
             car.reset_car()
             race_counter += 1
             print("race counter:", race_counter)
-            total_race_reward = 0
 
 print("hi")
 
 car = VehicleManager()
-run(car)
+output_file_path = "c:\\temp\\rlRacerOut.txt"
+note="development"
+initialize_file(output_file_path, note)
+run(car,  output_file_path)###todo: maybe need to pass this in via command line.)
 
 
 
@@ -341,3 +340,4 @@ run(car)
 #Look over update algorithm. Not sure why it learns quickly but gets stuck. MAYBE PICK A DIFFERENT ALGORITHM
 #Look over function to save. Probably should put race time in there or something. Maybe discounted reward. Make it format things better. Probably should clear the file the first time.
 #Make script for plotting output of file.
+#*************Get to where we can switch to new state scheme which includes the number of checkpoints
