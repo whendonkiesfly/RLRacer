@@ -16,7 +16,7 @@ class AsdfAlgorithm:#################TODO: RENAME ME!
         state = current_state.minimized_state
         if random.random() < self.epsilon:
             # print("random action!")
-            return VehicleAction.generate_random_action()
+            return get_random_action()
         else:
             # print("best known action")
             return max(q_matrix[state].keys(), key=lambda a: q_matrix[state][a])
@@ -49,17 +49,12 @@ class AsdfAlgorithm:#################TODO: RENAME ME!
 
 class VehicleState:
     LIDAR_THRESHOLDS = (0.25, 1, 5)
-    SPEED_THRESHOLDS = (0.25, 0.75, 1.25)
-    def __init__(self, lidar_vals, speed, crossing_checkpoint, crashed, checkpoint_count, crossed_finishline, quantize_values=True):####TODO: SHOULD CHECKPOINT COUNT BE HERE? SHOULD IT BE A BOOLEAN VALUE TO SAY WHETHER IT IS CROSSING A CHECKPOINT?
+    def __init__(self, lidar_vals, crossing_checkpoint, crashed, checkpoint_count, crossed_finishline, quantize_values=True):####TODO: SHOULD CHECKPOINT COUNT BE HERE? SHOULD IT BE A BOOLEAN VALUE TO SAY WHETHER IT IS CROSSING A CHECKPOINT?
         print("lidar", lidar_vals)
         if quantize_values:
             self.lidar_vals = tuple(self.enumerate_val(v, self.LIDAR_THRESHOLDS) for v in lidar_vals)
         else:
             self.lidar_vals = tuple(lidar_vals)
-        if quantize_values:
-            self.speed_val = self.enumerate_val(speed, self.SPEED_THRESHOLDS)
-        else:
-            self.speed_val = speed
         self.crashed = crashed
         self.crossing_checkpoint = crossing_checkpoint
         self.checkpoint_count = checkpoint_count
@@ -71,56 +66,30 @@ class VehicleState:
 
     @property
     def minimized_state(self):
-        return ((self.lidar_vals, self.speed_val))###todo: what should be here?
+        return self.lidar_vals
 
     # def __hash__(self):
         # return hash(self.minimized_state)
 
     def __str__(self):
-        return str(f"speed: {self.speed_val}   lidar: {self.lidar_vals}   crashed: {self.crashed}   checkpoint_count: {self.checkpoint_count}")
+        return str(f"lidar: {self.lidar_vals}   crashed: {self.crashed}   checkpoint_count: {self.checkpoint_count}")
 
     @classmethod
     def generate_all_minimized_states(self, lidar_laser_count):
         for lt in itertools.product(self.LIDAR_THRESHOLDS, repeat=lidar_laser_count):
-            for st in self.SPEED_THRESHOLDS:
-                yield (lt, st)
+            yield lt
 
 
 
-class VehicleAction:
-    ALLOWED_SPEEDS = [0.1, 0.5, 1.5]
-    ALLOWED_ANGLES = [-0.4, -0.2, 0, 0.2, 0.4]###TODO: IS 0.4 ENOUGH? GO TO MAX.
-    def __init__(self, speed, angle):
-        self.speed = speed
-        self.angle = angle
-
-    @classmethod
-    def generate_all_action_pairs(cls):
-        for a in cls.ALLOWED_ANGLES:
-            for s in cls.ALLOWED_SPEEDS:
-                yield cls(s, a)
-
-    def __repr__(self):
-        return f"VehicleAction({self.speed}, {self.angle})"
-    
-    def __hash__(self):
-        return hash(self.to_list())
-    
-    def __eq__(self, other):
-        return self.to_list() == other.to_list()
-
-    @classmethod
-    def generate_random_action(cls):
-        return cls(random.choice(cls.ALLOWED_SPEEDS), random.choice(cls.ALLOWED_ANGLES))
-
-    def to_list(self):
-        return self.speed, self.angle
+ALLOWED_ACTIONS = [-0.4, -0.2, 0, 0.2, 0.4]###TODO: IS 0.4 ENOUGH? GO TO MAX.
+def get_random_action():
+    return random.choice(ALLOWED_ACTIONS)
 
 
 def generate_random_q(lidar_laser_count):
     q = {}
     for state in VehicleState.generate_all_minimized_states(lidar_laser_count):
-        q[state] = {action: random.random() for action in VehicleAction.generate_all_action_pairs()}
+        q[state] = {action: random.random() for action in ALLOWED_ACTIONS}
     return q
 
 
@@ -158,7 +127,7 @@ class CheckpointData:
 
 
 class TrajectoryTriplet:
-    def __init__(self, state: VehicleState, action: VehicleAction, reward: float):
+    def __init__(self, state: VehicleState, action: float, reward: float):
         self.state = state
         self.action = action
         self.reward = reward
@@ -219,10 +188,6 @@ class VehicleManager:
     def get_state(self):
         #####todo: check to see if we are in contact with a checkpoint?
         lidar_value = self.lidar_sensor.getRangeImage()
-        speed = self.driver.getCurrentSpeed()
-        if math.isnan(speed):
-            print("speed was nan!")#todo: remove me and add comment!
-            speed = 0
         if self.check_for_collisions():#############################################TODO: FIGURE OUT HOW TO SEE A CHECKPOINT!!! MAYBE GPS
             print("crashed!!!")
             self.crashed = True
@@ -243,14 +208,12 @@ class VehicleManager:
         crossed_finishline = self.checkpoint_count == len(self.checkpoints)
         if crossed_finishline:
             print("asdfasdf", self.checkpoint_count, len(self.checkpoints))
-        return VehicleState(lidar_value, speed, crossing_checkpoint, self.crashed, self.checkpoint_count, crossed_finishline)
+        return VehicleState(lidar_value, crossing_checkpoint, self.crashed, self.checkpoint_count, crossed_finishline)
 
-    def execute_action(self, speed_angle):#########TODO: MAX SPEED OF 1.8???
-        ##############################todo: be able to do breaks?? maybe driver does it for me.
+    def execute_action(self, angle):
         ##todo: max angle of -0.4, 0.4??
-        speed, angle = speed_angle
         self.driver.setSteeringAngle(angle)
-        self.driver.setCruisingSpeed(speed)
+        self.driver.setCruisingSpeed(1.5)#########TODO: MAX SPEED OF 1.8???
 
     def reset_car(self):
         self.trans_field.setSFVec3f(self.starting_trans)
@@ -309,7 +272,7 @@ def run(car):
         #Choose an action
         next_action = algo.get_next_action(q_matrix, current_state)
         # print("picked action", next_action)
-        car.execute_action(next_action.to_list())
+        car.execute_action(next_action)
 
         reward = calculate_reward(current_state, next_action)
 
