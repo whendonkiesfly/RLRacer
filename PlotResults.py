@@ -8,8 +8,7 @@ def plot_the_stuff(file_path, title):
     with open(file_path, "r") as fin:
         file_lines = fin.readlines()
     
-    note = file_lines[0]
-    data_entries = [json.loads(line) for line in file_lines[1:]]
+    data_entries = [json.loads(line) for line in file_lines]
 
     fig, ax1 = plt.subplots()
     y_vals = list(entry["missing_checkpoints"] for entry in data_entries)

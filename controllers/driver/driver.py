@@ -1,25 +1,33 @@
 import itertools
 import json
-import math
+import pickle
 import numpy as np
 import random
 from vehicle import Driver
 
 
 
-class AsdfAlgorithm:#################TODO: RENAME ME!
-    def __init__(self, epsilon, discount_factor):
+MAX_CHECKPOINT_TIME = 10
+
+
+
+class MainAlgorithm:
+    def __init__(self, epsilon, discount_factor, include_checkpoint_in_state):
         self.epsilon = epsilon
         self.discount_factor = discount_factor
+        self.include_checkpoint_in_state = include_checkpoint_in_state
 
     def get_next_action(self, q_matrix, current_state):
-        state = current_state.minimized_state
+        state = current_state.minimized_state(self.include_checkpoint_in_state)
         if random.random() < self.epsilon:
             # print("random action!")
             return get_random_action()
         else:
             # print("best known action")
-            return max(q_matrix[state].keys(), key=lambda a: q_matrix[state][a])
+            try:
+                return max(q_matrix[state].keys(), key=lambda a: q_matrix[state][a])
+            except Exception as e:
+                import pdb; pdb.set_trace()
 
 
     def update_q(self, q_matrix, trajectory, step_size, single_state_calculate=False):####TODO: CHECK ME WELL.       ######################TODO: MAKE THIS WORK WITH AN AVERAGED TARGET OVER MULTIPLE EPISODES WITH THE SAME Q VALUES(?)
@@ -29,7 +37,7 @@ class AsdfAlgorithm:#################TODO: RENAME ME!
         reward_sum = 0
         for trajectory_point in reversed(trajectory):
             reward_sum = (reward_sum * self.discount_factor) + trajectory_point.reward#############TODO: DISCOUNT FACTOR I THINK!!!
-            state = trajectory_point.state.minimized_state##############TODO: MINIMIZED STATE IS UGLY!!! PROBABLY MAKE A MORE MINIMAL OBJECT THAT GOES IN THE STATE OBJECT.
+            state = trajectory_point.state.minimized_state(self.include_checkpoint_in_state)
             if state not in state_rewards:
                 state_rewards[state] = {}
             
@@ -62,34 +70,54 @@ class AsdfAlgorithm:#################TODO: RENAME ME!
 
 class VehicleState:
     LIDAR_THRESHOLDS = (0.25, 1, 5)
-    def __init__(self, lidar_vals, crossing_checkpoint, crashed, checkpoint_count, crossed_finishline, quantize_values=True):####TODO: SHOULD CHECKPOINT COUNT BE HERE? SHOULD IT BE A BOOLEAN VALUE TO SAY WHETHER IT IS CROSSING A CHECKPOINT?
-        if quantize_values:
-            self.lidar_vals = tuple(self.enumerate_val(v, self.LIDAR_THRESHOLDS) for v in lidar_vals)
-        else:
-            self.lidar_vals = tuple(lidar_vals)
+    def __init__(self, lidar_vals, crossing_checkpoint, crashed, checkpoint_count, crossed_finishline):
+        self.lidar_vals = tuple(self.quantize_val(v, self.LIDAR_THRESHOLDS) for v in lidar_vals)
         self.crashed = crashed
         self.crossing_checkpoint = crossing_checkpoint
         self.checkpoint_count = checkpoint_count
         self.crossed_finishline = crossed_finishline
 
-
-    def enumerate_val(self, val, thresholds):###todo: maybe get a new name.
+    def quantize_val(self, val, thresholds):
         return min(thresholds, key=lambda thresh: abs(val-thresh))
 
-    @property
-    def minimized_state(self):
-        return self.lidar_vals
+    def minimized_state(self, include_checkpoint):
+        if include_checkpoint:
+            return self.format_minimized_state(self.lidar_vals, self.checkpoint_count)
+        else:
+            return self.format_minimized_state(self.lidar_vals)
 
-    # def __hash__(self):
-        # return hash(self.minimized_state)
+    @classmethod
+    def format_minimized_state(cls, lidar_vals, checkpoint_count=None):
+        if checkpoint_count is not None:
+            return (lidar_vals, checkpoint_count)
+        else:
+            return (lidar_vals, )
+
+    @classmethod
+    def state_includes_cp(cls, state):
+        if len(state) == 1:
+            return False
+        elif len(state) == 2:
+            return True
+        else:
+            raise ValueError(f"State with length of {len(state)}?")
 
     def __str__(self):
         return str(f"lidar: {self.lidar_vals}   crashed: {self.crashed}   checkpoint_count: {self.checkpoint_count}")
 
     @classmethod
-    def generate_all_minimized_states(self, lidar_laser_count):
-        for lt in itertools.product(self.LIDAR_THRESHOLDS, repeat=lidar_laser_count):
-            yield lt
+    def generate_all_minimized_states(self, lidar_laser_count, checkpoint_count=None):
+        """
+        if checkpoint_count is None, checkpoint isn't included in the states.
+        """
+        lidar_iterator = itertools.product(self.LIDAR_THRESHOLDS, repeat=lidar_laser_count)
+        if checkpoint_count is None:
+            for lt in lidar_iterator:
+                yield self.format_minimized_state(lt)
+        else:
+            for lt in lidar_iterator:
+                for i in range(checkpoint_count + 1):
+                    yield self.format_minimized_state(lt, i)
 
 
 
@@ -97,12 +125,6 @@ ALLOWED_ACTIONS = [-0.4, -0.2, 0, 0.2, 0.4]###TODO: IS 0.4 ENOUGH? GO TO MAX.
 def get_random_action():
     return random.choice(ALLOWED_ACTIONS)
 
-
-def generate_random_q(lidar_laser_count):
-    q = {}
-    for state in VehicleState.generate_all_minimized_states(lidar_laser_count):
-        q[state] = {action: random.random() for action in ALLOWED_ACTIONS}
-    return q
 
 
 
@@ -145,10 +167,12 @@ class TrajectoryTriplet:
         self.reward = reward
 
 
-CAR_DEF = "the_car"
-CHECKPOINT_GROUP_DEF = "CHECKPOINTS"
 
 class VehicleManager:
+    
+    CAR_DEF = "the_car"
+    CHECKPOINT_GROUP_DEF = "CHECKPOINTS"
+
     def __init__(self):
         self.checkpoint_count = 0
         self.crashed = False
@@ -158,7 +182,7 @@ class VehicleManager:
         self.driver = Driver()
         self.timestep = int(self.driver.getBasicTimeStep())
 
-        self.car_node = self.driver.getFromDef(CAR_DEF)
+        self.car_node = self.driver.getFromDef(self.CAR_DEF)
 
 
         #Set up the lidar sensor.
@@ -182,7 +206,7 @@ class VehicleManager:
 
 
     def load_checkpoint_info(self):
-        checkpoint_group = self.driver.getFromDef(CHECKPOINT_GROUP_DEF)
+        checkpoint_group = self.driver.getFromDef(self.CHECKPOINT_GROUP_DEF)
         checkpoint_group_values = checkpoint_group.getField("children")
         checkpoint_count = checkpoint_group_values.getCount()
         self.checkpoints = []
@@ -241,13 +265,20 @@ class VehicleManager:
     def step(self):
         return self.driver.step()
 
-def calculate_reward(state, action, crash_penalty=5):
-    return int(state.crossing_checkpoint) - (crash_penalty * int(state.crashed))
 
 
-def initialize_file(path, note):
+
+
+
+#############################################################################
+##############################File IO Functions##############################
+#############################################################################
+
+def initialize_file(path):
+    #Just open the file handle to clear the file if it is already populated.
     with open(path, "w") as fout:
-        fout.write(note + "\n")
+        pass
+
 
 def save_info(path, iteration_count, race_time, missing_checkpoints):
     with open(path, "a") as fout:
@@ -256,30 +287,97 @@ def save_info(path, iteration_count, race_time, missing_checkpoints):
                                 "missing_checkpoints": missing_checkpoints}) + "\n")
 
 
-def run(car, output_file_path):
+def save_q(path, q):
+    with open(path, "wb") as fout:
+        pickle.dump(q, fout)
+        
+
+def load_q(path):
+    with open(path, "rb") as fin:
+        return pickle.load(fin)
+
+
+
+
+
+
+
+def calculate_reward(state, action, crash_penalty=5, finishline_bonus=3):
+    """
+    Reward is 1 for crossing a checkpoint with a finishline_bonus multiplier if the checkpoint is the finish line.
+    Reward is taken if the car crashed.
+    """
+    return int(state.crossing_checkpoint) * (1 + finishline_bonus * int(state.crossed_finishline)) - (crash_penalty * int(state.crashed))
+
+
+
+def generate_random_q(lidar_laser_count, checkpoint_count=None):
+    q = {}
+    for state in VehicleState.generate_all_minimized_states(lidar_laser_count, checkpoint_count):
+        q[state] = {action: random.random() for action in ALLOWED_ACTIONS}
+    return q
+
+
+def upgrade_q(q, checkpoint_count):################TODO: RANDOMNESS HERE????
+    """
+    Takes a q matrix that was made without checkpoints being part of states and returns a new q matrix with checkpoints in the states.
+    """
+    new_q = {}
+    for state in new_q.keys():
+        for action in new_q[state].keys():
+            for i in range(checkpoint_count + 1):
+                if i == 0:
+                    new_q[new_state] = {}
+                new_state = VehicleState.format_minimized_state(state[0], i)
+                new_q[new_state][action] = q[state][action]
+
+
+
+
+
+
+
+
+
+def run(car, output_base_path, include_cp_in_state, epsilon, input_q_path=None):
 
     lidar_laser_count = car.lidar_sensor.getHorizontalResolution()
 
-    q_matrix = generate_random_q(lidar_laser_count)
-    epsilon = 0.1
+    if include_cp_in_state:
+        checkpoint_count = len(car.checkpoints)
+    else:
+        checkpoint_count = None
 
-    MAX_CHECKPOINT_TIME = 10
+
+    if input_q_path:
+        q_matrix = load_q(input_q_path)
+        q_includes_checkpoint = VehicleState.state_includes_cp(list(q_matrix.keys())[0])
+        if q_includes_checkpoint and not include_cp_in_state:
+            raise ValueError("Q matrix downgrading now supported!")
+        elif include_cp_in_state and not q_includes_checkpoint:
+            #Need to upgrade.
+            q_matrix = upgrade_q(q_matrix, checkpoint_count)
+    else:
+        q_matrix = generate_random_q(lidar_laser_count, checkpoint_count)
+
 
     race_counter = 1
     discount_factor = 0.99
 
-    algo = AsdfAlgorithm(epsilon, discount_factor)
+    algo = MainAlgorithm(epsilon, discount_factor, include_cp_in_state)
     trajectory = []
     race_time = 0
     timeout_time = MAX_CHECKPOINT_TIME
 
+    results_output_path = output_base_path + "_results.txt"
+
+    initialize_file(output_file_path)
 
     while car.step() != -1:
 
         current_state = car.get_state()
         #Choose an action
         next_action = algo.get_next_action(q_matrix, current_state)
-        # print("picked action", next_action)
         car.execute_action(next_action)
 
         reward = calculate_reward(current_state, next_action)
@@ -309,7 +407,8 @@ def run(car, output_file_path):
             step_size = 0.025
             missing_checkpoints = len(car.checkpoints) - car.checkpoint_count
             algo.update_q(q_matrix, trajectory, step_size)
-            save_info(output_file_path, race_counter, race_time, missing_checkpoints)  # NOTE: Saved reward is that of the whole race and not a single episode.
+            save_info(results_output_path, race_counter, race_time, missing_checkpoints)  # NOTE: Saved reward is that of the whole race and not a single episode.
+            save_q(output_base_path + "_q.pickle", q_matrix)
             trajectory = []
             race_time = 0
             timeout_time = MAX_CHECKPOINT_TIME
@@ -317,13 +416,17 @@ def run(car, output_file_path):
             race_counter += 1
             print("race counter:", race_counter)
 
-print("hi")
 
-car = VehicleManager()
-output_file_path = "c:\\temp\\rlRacerOut.txt"
-note="development"
-initialize_file(output_file_path, note)
-run(car,  output_file_path)###todo: maybe need to pass this in via command line.)
+if __name__ == "__main__":
+    print("hi")
+
+    car = VehicleManager()
+    output_file_path = "c:\\temp\\rlRacerOut"
+
+    include_cp_in_state = True
+    epsilon = 0.1
+    q_path = "c:\\temp\\rlRacerOut_q.txt"
+    run(car,  output_file_path, include_cp_in_state, epsilon, input_q_path=q_path)
 
 
 
@@ -339,5 +442,8 @@ run(car,  output_file_path)###todo: maybe need to pass this in via command line.
 #MAJOR TODOS:
 #Look over update algorithm. Not sure why it learns quickly but gets stuck. MAYBE PICK A DIFFERENT ALGORITHM
 #Look over function to save. Probably should put race time in there or something. Maybe discounted reward. Make it format things better. Probably should clear the file the first time.
-#Make script for plotting output of file.
 #*************Get to where we can switch to new state scheme which includes the number of checkpoints
+
+#####################TODO: REWARD FOR FINISH LINE SHOULD BE HIGHER
+
+###########TODO: MAKE SURE WE CAN SAVE Q! PROBABLY NOT BECAUSE STATES ARE OBJECTS INSTEAD OF JUST NUMBERS!! MAKE THEM JUST NUMBERS PROBABLY!
