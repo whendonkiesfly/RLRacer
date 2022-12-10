@@ -258,9 +258,9 @@ def save_info(path, iteration_count, race_time, missing_checkpoints):
 
 def run(car, output_file_path):
 
-    LIDAR_LASER_COUNT = 6###TODO: GET THIS FROM ENVIRONMENT!
+    lidar_laser_count = car.lidar_sensor.getHorizontalResolution()
 
-    q_matrix = generate_random_q(LIDAR_LASER_COUNT)
+    q_matrix = generate_random_q(lidar_laser_count)
     epsilon = 0.1
 
     MAX_CHECKPOINT_TIME = 10
