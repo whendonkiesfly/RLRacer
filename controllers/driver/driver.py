@@ -7,7 +7,6 @@ from vehicle import Driver
 
 
 
-MAX_CHECKPOINT_TIME = 10
 
 
 def pull_action_from_q(q_matrix, state, epsilon, include_checkpoint_in_state):
@@ -25,8 +24,7 @@ class CycleInfo:
     """
     Stores all information an RL algorithm may need in its get_next_action step
     """
-    def __init__(self, q, state, trajectory, fully_greedy):
-        self.q = q
+    def __init__(self, state, trajectory, fully_greedy):
         self.state = state
         self.trajectory = trajectory
         self.fully_greedy = fully_greedy
@@ -40,6 +38,7 @@ class SarsaAlgorithm:
         self.discount_factor = discount_factor
         self.include_checkpoint_in_state = include_checkpoint_in_state
         self.initial_q = initial_q
+        self.q_matrix = initial_q
 
 
     def get_next_action(self, cycle_info:CycleInfo):
@@ -47,7 +46,7 @@ class SarsaAlgorithm:
         epsilon = self.epsilon if not cycle_info.fully_greedy else 0
 
         if not cycle_info.trajectory:
-            action = pull_action_from_q(cycle_info.q, cycle_info.state, epsilon, self.include_checkpoint_in_state)
+            action = pull_action_from_q(self.q_matrix, cycle_info.state, epsilon, self.include_checkpoint_in_state)
             return action
         else:
             #This isn't the first state, we need to update Q using info from the last cycle.
@@ -59,17 +58,14 @@ class SarsaAlgorithm:
             previous_R = sar.reward
 
             #Choose A' from S' using Q
-            next_action = pull_action_from_q(cycle_info.q, current_S, epsilon, self.include_checkpoint_in_state)
+            next_action = pull_action_from_q(self.q_matrix, current_S, epsilon, self.include_checkpoint_in_state)
 
-            cycle_info.q[previous_S][previous_A] += self.step_size * (previous_R + cycle_info.q[current_S][next_action] - cycle_info.q[previous_S][previous_A])#############################TODO: CHECK ME WELL!!! 
-            # print("new", previous_R, previous_S, previous_A, cycle_info.q[previous_S][previous_A])
-            if previous_R != 0:
-                print("asdfasdadsf", previous_R)
+            self.q_matrix[previous_S][previous_A] += self.step_size * (previous_R + self.q_matrix[current_S][next_action] - self.q_matrix[previous_S][previous_A])#############################TODO: CHECK ME WELL!!! 
 
             return next_action
 
-    def update_q(self, final_state, q_matrix, trajectory, step_size, single_state_calculate=False):
-        cycle_info = CycleInfo(q_matrix, final_state, trajectory, False)
+    def update_q(self, final_state, trajectory, single_state_calculate=False):
+        cycle_info = CycleInfo(final_state, trajectory, False)
         self.get_next_action(cycle_info)
 
     
@@ -79,22 +75,20 @@ class AllVisitMCAlgorithm:
     """
     Algorithm similar to first visit MC except that all visits are used for updating q.
     """
-    def __init__(self, epsilon, discount_factor, include_checkpoint_in_state):
+    def __init__(self, step_size, epsilon, discount_factor, include_checkpoint_in_state, initial_q):
+        self.step_size = step_size
         self.epsilon = epsilon
         self.discount_factor = discount_factor
         self.include_checkpoint_in_state = include_checkpoint_in_state
+        self.q_matrix = initial_q
 
     def get_next_action(self, cycle_info:CycleInfo):########TODO: REPLACE WITH THE NEW FUNCTION.
         state = cycle_info.state
-        if type(state) is VehicleState:
-            state = state.minimized_state(self.include_checkpoint_in_state)
-        if not cycle_info.fully_greedy and random.random() < self.epsilon:
-            return get_random_action()######################################TODO: USE pull_action_from_q!!!
-        else:
-            return max(cycle_info.q[state].keys(), key=lambda a: cycle_info.q[state][a])
+        epsilon = self.epsilon if not cycle_info.fully_greedy else 0
+        return pull_action_from_q(self.q_matrix, cycle_info.state, epsilon, self.include_checkpoint_in_state)
 
 
-    def update_q(self, final_state, q_matrix, trajectory, step_size, single_state_calculate=False):####TODO: CHECK ME WELL.
+    def update_q(self, final_state, trajectory, single_state_calculate=False):####TODO: CHECK ME WELL.
         #Iterate backwards through the trajectory and calculate the reward for each state.
         #Go backwards so the reward is attributed to the first instance of the state.
         state_rewards = {}
@@ -122,7 +116,7 @@ class AllVisitMCAlgorithm:
         for state in state_rewards.keys():
             for action in state_rewards[state].keys():
                 # print("updating q", state, action, state_rewards[state][action])
-                q_matrix[state][action] += step_size * (state_rewards[state][action] - q_matrix[state][action])
+                self.q_matrix[state][action] += self.step_size * (state_rewards[state][action] - self.q_matrix[state][action])
 
 
 
@@ -130,13 +124,15 @@ class AllVisitMCAlgorithm:
 
 
 class VehicleState:
-    LIDAR_THRESHOLDS = (0.25, 1, 5)
-    def __init__(self, lidar_vals, crossing_checkpoint, crashed, checkpoint_count, crossed_finishline):
+    LIDAR_THRESHOLDS = (0.25, 1, 5)###########TODO: CHANGE ME BACK!!!
+    # LIDAR_THRESHOLDS = (0.25,)
+    def __init__(self, lidar_vals, crossing_checkpoint, crashed, checkpoint_count, crossed_finishline, timed_out):
         self.lidar_vals = tuple(self.quantize_val(v, self.LIDAR_THRESHOLDS) for v in lidar_vals)
         self.crashed = crashed
         self.crossing_checkpoint = crossing_checkpoint
         self.checkpoint_count = checkpoint_count
         self.crossed_finishline = crossed_finishline
+        self.timed_out = timed_out
 
     def quantize_val(self, val, thresholds):
         return min(thresholds, key=lambda thresh: abs(val-thresh))
@@ -183,6 +179,7 @@ class VehicleState:
 
 
 ALLOWED_ACTIONS = [-0.6, -0.2, 0, 0.2, 0.6]
+# ALLOWED_ACTIONS = [0, 0.6]##################TODO: CHANGE ME BACK!!
 def get_random_action():
     return random.choice(ALLOWED_ACTIONS)
 
@@ -284,7 +281,7 @@ class VehicleManager:
             cp_data = CheckpointData(dims, cp_pose, color_field)
             self.checkpoints.append(cp_data)
 
-    def get_state(self):
+    def get_state(self, timed_out):
         #####todo: check to see if we are in contact with a checkpoint?
         lidar_value = self.lidar_sensor.getRangeImage()
         if self.check_for_collisions():
@@ -304,7 +301,7 @@ class VehicleManager:
             print("Getting state post-race")
         
         crossed_finishline = self.checkpoint_count == len(self.checkpoints)
-        return VehicleState(lidar_value, crossing_checkpoint, self.crashed, self.checkpoint_count, crossed_finishline)
+        return VehicleState(lidar_value, crossing_checkpoint, self.crashed, self.checkpoint_count, crossed_finishline, timed_out)
 
     def execute_action(self, angle):
         self.driver.setSteeringAngle(angle)
@@ -354,9 +351,21 @@ def save_q(path, q):
         pickle.dump(q, fout)
         
 
-def load_q(path):
+def load_q(path, include_cp_in_state, checkpoint_count=None):
     with open(path, "rb") as fin:
-        return pickle.load(fin)
+        q_matrix = pickle.load(fin)
+
+    q_includes_checkpoint = VehicleState.state_includes_cp(list(q_matrix.keys())[0])
+
+    if q_includes_checkpoint and not include_cp_in_state:
+        raise ValueError("Q matrix downgrading now supported!")
+    elif include_cp_in_state and not q_includes_checkpoint:
+        #Need to upgrade.
+        if checkpoint_count is None:
+            raise ValueError("Checkpoint count must be included when using checkpoints in the state.")
+        print("upgrading")
+        q_matrix = upgrade_q(q_matrix, checkpoint_count)
+    return q_matrix
 
 
 
@@ -364,12 +373,13 @@ def load_q(path):
 
 
 
-def calculate_reward(state, action, crash_penalty=5, finishline_bonus=3):
+def calculate_reward(state, action, crash_penalty=5, finishline_bonus=3, timeout_penalty=5):
     """
     Reward is 1 for crossing a checkpoint with a finishline_bonus multiplier if the checkpoint is the finish line.
     Reward is taken if the car crashed.
     """
-    return int(state.crossing_checkpoint) * (1 + finishline_bonus * int(state.crossed_finishline)) - (crash_penalty * int(state.crashed))
+    return int(state.crossing_checkpoint) * (1 + finishline_bonus * int(state.crossed_finishline)) - \
+                                (crash_penalty * int(state.crashed)) - (timeout_penalty * int(state.timed_out))
 
 
 
@@ -401,37 +411,11 @@ def upgrade_q(q, checkpoint_count):################TODO: RANDOMNESS HERE????
 
 
 
-def run(car, output_base_path, include_cp_in_state, epsilon, discount_factor, input_q_path=None, termination_value=1000):
-
-    lidar_laser_count = car.lidar_sensor.getHorizontalResolution()
-
-    if include_cp_in_state:
-        checkpoint_count = len(car.checkpoints)
-    else:
-        checkpoint_count = None
-
-
-    if input_q_path:
-        q_matrix = load_q(input_q_path)
-        q_includes_checkpoint = VehicleState.state_includes_cp(list(q_matrix.keys())[0])
-        if q_includes_checkpoint and not include_cp_in_state:
-            raise ValueError("Q matrix downgrading now supported!")
-        elif include_cp_in_state and not q_includes_checkpoint:
-            #Need to upgrade.
-            q_matrix = upgrade_q(q_matrix, checkpoint_count)
-    else:
-        q_matrix = generate_random_q(lidar_laser_count, checkpoint_count)
-
-
-    step_size = 0.025
-
-    # algo = AllVisitMCAlgorithm(epsilon, discount_factor, include_cp_in_state)
-
-    algo = SarsaAlgorithm(step_size, epsilon, discount_factor, include_cp_in_state, q_matrix)
+def run(car, algo, output_base_path, termination_value=1000, max_checkpoint_time=10):
 
     trajectory = []
     race_time = 0
-    timeout_time = MAX_CHECKPOINT_TIME
+    timeout_time = max_checkpoint_time
     race_counter = 0
 
     results_output_path = output_base_path + "_results.txt"
@@ -439,11 +423,11 @@ def run(car, output_base_path, include_cp_in_state, epsilon, discount_factor, in
     initialize_file(output_file_path)
 
     while car.step() != -1:
-
-        current_state = car.get_state()
+        timed_out = (race_time >= timeout_time)
+        current_state = car.get_state(timed_out)
         #Choose an action
         fully_greedy = (race_counter == (termination_value - 1))  # Fully greedy (epsilon=0) if we are on the last cycle##########TODO: JUST PASS IN EPSILON?
-        cycle_info = CycleInfo(q_matrix, current_state, trajectory, fully_greedy)
+        cycle_info = CycleInfo(current_state, trajectory, fully_greedy)
         next_action = algo.get_next_action(cycle_info)
         car.execute_action(next_action)
 
@@ -456,10 +440,10 @@ def run(car, output_base_path, include_cp_in_state, epsilon, discount_factor, in
 
         #If we crossed a checkpoint, give us more time before we timeout.
         if current_state.crossing_checkpoint:
-            timeout_time = race_time + MAX_CHECKPOINT_TIME
+            timeout_time = race_time + max_checkpoint_time
 
         race_over = False
-        if race_time >= timeout_time:##todo: change to episode time?
+        if current_state.timed_out:##todo: change to episode time?
             print("timeout!")
             race_over = True
         if current_state.crashed:
@@ -472,13 +456,13 @@ def run(car, output_base_path, include_cp_in_state, epsilon, discount_factor, in
         if race_over:
             race_counter += 1
             missing_checkpoints = len(car.checkpoints) - car.checkpoint_count
-            final_state = car.get_state()
-            algo.update_q(final_state, q_matrix, trajectory, step_size)
+            final_state = car.get_state(timed_out)
+            algo.update_q(final_state, trajectory)
             save_info(results_output_path, race_counter, race_time, missing_checkpoints)  # NOTE: Saved reward is that of the whole race and not a single episode.
-            save_q(output_base_path + "_q.pickle", q_matrix)
+            save_q(output_base_path + "_q.pickle", algo.q_matrix)
             trajectory = []
             race_time = 0
-            timeout_time = MAX_CHECKPOINT_TIME
+            timeout_time = max_checkpoint_time
             car.reset_car()
             print("race counter:", race_counter)
             if race_counter == termination_value:
@@ -490,26 +474,46 @@ def run(car, output_base_path, include_cp_in_state, epsilon, discount_factor, in
 if __name__ == "__main__":
 
     car = VehicleManager()
-    output_file_path = "c:\\temp\\rlRacerOut"
 
-    include_cp_in_state = False
     epsilon = 0.1
     discount_factor = 0.9999
+    mc_step_size = 0.025#################TODO: WHAT SHOULD THIS BE? THIS IS GOOD FOR MC
+    sarsa_step_size = 0.25##good for other sarsa
+
+
+
+    cp_count = len(car.checkpoints)
+    lidar_laser_count = car.lidar_sensor.getHorizontalResolution()
+
+
+
+
+
+    # include_cp_in_state = False
+    # output_file_path = "c:\\temp\\rlRacerOut"
+    # q_matrix = generate_random_q(lidar_laser_count, None)
+    # algo = AllVisitMCAlgorithm(mc_step_size, epsilon, discount_factor, include_cp_in_state, q_matrix)
+    # run(car, algo, output_file_path)
+
     # q_path = "c:\\temp\\rlRacerOut_q.txt"
-    q_path = None
-    run(car,  output_file_path, include_cp_in_state, epsilon, discount_factor, input_q_path=q_path)
+
+
+
+    include_cp_in_state = False
+    output_file_path = "c:\\temp\\rlRacerOut"
+    q_matrix = generate_random_q(lidar_laser_count, None)
+    algo = SarsaAlgorithm(mc_step_size, epsilon, discount_factor, include_cp_in_state, q_matrix)
+    run(car, algo, output_file_path)
+
+
     print("All tests complete.")
 
 
 
 
 
-
-
-
-
-
+#Clean things up and comment.
 
 #Set main to run over different parameters. Also sometimes with same parameters.
 #new tracks. Mirror first and make a new one
-#Clean things up and comment.
+##does the MC algorithm fit with something we learned in class??????
