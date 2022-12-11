@@ -235,6 +235,9 @@ class VehicleManager:
         self.driver.setSteeringAngle(angle)
         self.driver.setCruisingSpeed(1.5)
 
+    def stop(self):
+        self.driver.setCruisingSpeed(0)
+
     def reset_car(self):
         """
         Resets the race to the original conditions.
@@ -618,7 +621,7 @@ if __name__ == "__main__":
     # algo = SarsaAlgorithm(mc_step_size, epsilon, discount_factor, include_cp_in_state, q_matrix)
     # run(car, algo, output_file_path)
 
-
+    car.stop()
     print("All tests complete.")
 
 
