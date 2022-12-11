@@ -17,7 +17,7 @@ def plot_the_stuff(file_path, title):
     ax1.set(xlabel="Race #", ylabel="Missed Checkpoints", title=title)
 
     #calculate equation for trendline
-    z = np.polyfit(x_vals, y_vals, 2)
+    z = np.polyfit(x_vals, y_vals, 1)
     p = np.poly1d(z)
     l2, = ax1.plot(x_vals, p(x_vals), label="Missed Checkpoint Trendline", color="blue")
     
