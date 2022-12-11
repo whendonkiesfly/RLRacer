@@ -402,11 +402,11 @@ class SarsaAlgorithm:
     Implements the SARSA algorithm.
     """
 
-    def __init__(self, step_size, epsilon, discount_factor, include_checkpoint_in_state, initial_q):
+    def __init__(self, step_size, epsilon, discount_factor, initial_q):
+        self.include_checkpoint_in_state = VehicleState.state_includes_cp(list(initial_q.keys())[0])
         self.step_size = step_size
         self.epsilon = epsilon
         self.discount_factor = discount_factor
-        self.include_checkpoint_in_state = include_checkpoint_in_state
         self.initial_q = initial_q
         self.q_matrix = initial_q
 
@@ -444,14 +444,15 @@ class MCAlgorithm:
     """
     Algorithm similar to first visit MC except that all visits are used for updating q.
     """
-    def __init__(self, step_size, epsilon, discount_factor, include_checkpoint_in_state, initial_q, first_visit):
+    def __init__(self, step_size, epsilon, discount_factor, initial_q, first_visit):
         """
         If first_visit is True, this runs the first-visit MC algorithm.
         """
+        
+        self.include_checkpoint_in_state = VehicleState.state_includes_cp(list(initial_q.keys())[0])
         self.step_size = step_size
         self.epsilon = epsilon
         self.discount_factor = discount_factor
-        self.include_checkpoint_in_state = include_checkpoint_in_state
         self.q_matrix = initial_q
         self.first_visit = first_visit
 
@@ -593,33 +594,71 @@ if __name__ == "__main__":
     lidar_laser_count = car.lidar_sensor.getHorizontalResolution()
 
 
+    race_count = 500
+    run_count = 3
 
 
 
-    include_cp_in_state = False
-    output_file_path = "c:\\temp\\rlRacerOut_all_visit1"
-    q_matrix = generate_random_q(lidar_laser_count, None)
-    first_visit = False
-    algo = MCAlgorithm(mc_step_size, epsilon, discount_factor, include_cp_in_state, q_matrix, first_visit)
-    run(car, algo, output_file_path, 20)
+    #MC algorithm.
+
+    print("Running experiments 'A'")
+    for i in range(run_count):
+        output_file_path = f"c:\\temp\\results_track_1\\firstvisitmc_noCP_{i}"
+        q_matrix = generate_random_q(lidar_laser_count, None)
+        first_visit = True
+        algo = MCAlgorithm(mc_step_size, epsilon, discount_factor, q_matrix, first_visit)
+        run(car, algo, output_file_path, race_count)
+
+    print("Running experiments 'B'")
+    for i in range(run_count):
+        output_file_path = f"c:\\temp\\results_track_1\\allvisitmc_noCP_{i}"
+        q_matrix = generate_random_q(lidar_laser_count, None)
+        first_visit = False
+        algo = MCAlgorithm(mc_step_size, epsilon, discount_factor, q_matrix, first_visit)
+        run(car, algo, output_file_path, race_count)
+
+    print("Running experiments 'C'")
+    for i in range(run_count):
+        output_file_path = f"c:\\temp\\results_track_1\\firstvisitmc_withCP_{i}"
+        q_matrix = generate_random_q(lidar_laser_count, cp_count)
+        first_visit = True
+        algo = MCAlgorithm(mc_step_size, epsilon, discount_factor, q_matrix, first_visit)
+        run(car, algo, output_file_path, race_count)
+
+    print("Running experiments 'D'")
+    for i in range(run_count):
+        output_file_path = f"c:\\temp\\results_track_1\\allvisitmc_withCP_{i}"
+        q_matrix = generate_random_q(lidar_laser_count, cp_count)
+        first_visit = False
+        algo = MCAlgorithm(mc_step_size, epsilon, discount_factor, q_matrix, first_visit)
+        run(car, algo, output_file_path, race_count)
+
+    print("Running experiments 'E'")
+    for i in range(run_count):
+        output_file_path = f"c:\\temp\\results_track_1\\allvisitmc_withCP_relearn_{i}"
+        q_path = f"c:\\temp\\results_track_1\\allvisitmc_noCP_{i}"
+        q_matrix = load_q(q_path, True, cp_count)
+        first_visit = False
+        algo = MCAlgorithm(mc_step_size, epsilon, discount_factor, q_matrix, first_visit)
+        run(car, algo, output_file_path, race_count)
 
 
-    # print("LOADING NEW!!!!")
+    #SARSA
 
-    # q_path = output_file_path + "_q.pickle"
-    # include_cp_in_state = True
-    # output_file_path = "c:\\temp\\rlRacerOut_all_visit2"
-    # q_matrix = load_q(q_path, include_cp_in_state, cp_count)
-    # first_visit = False
-    # algo = MCAlgorithm(mc_step_size, epsilon, discount_factor, include_cp_in_state, q_matrix, first_visit)
-    # run(car, algo, output_file_path, 10)
+    print("Running experiments 'F'")
+    for i in range(run_count):
+        output_file_path = f"c:\\temp\\results_track_1\\sarsa_withCP_{i}"
+        q_matrix = generate_random_q(lidar_laser_count, cp_count)
+        algo = SarsaAlgorithm(mc_step_size, epsilon, discount_factor, q_matrix)
+        run(car, algo, output_file_path, race_count)
 
+    print("Running experiments 'G'")
+    for i in range(run_count):
+        output_file_path = f"c:\\temp\\results_track_1\\sarsa_noCP_{i}"
+        q_matrix = generate_random_q(lidar_laser_count, None)
+        algo = SarsaAlgorithm(mc_step_size, epsilon, discount_factor, q_matrix)
+        run(car, algo, output_file_path, race_count)
 
-    # include_cp_in_state = False
-    # output_file_path = "c:\\temp\\rlRacerOut"
-    # q_matrix = generate_random_q(lidar_laser_count, None)
-    # algo = SarsaAlgorithm(mc_step_size, epsilon, discount_factor, include_cp_in_state, q_matrix)
-    # run(car, algo, output_file_path)
 
     car.stop()
     print("All tests complete.")
