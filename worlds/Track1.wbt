@@ -36,8 +36,8 @@ Solid {
   boundingObject USE WALL_SHAPE
 }
 DEF the_car Robot {
-  translation -1.20933 1.85 0.00999924
-  rotation -2.6463944110754846e-05 0.9999909209751591 0.004261134463154432 0.012140866560459602
+  translation -1.2095865507929928 1.849999995509306 0.01951771223425211
+  rotation -0.0010257679245473394 -0.9947633284489468 0.10220013783423983 0.0005065198106462508
   children [
     GPS {
       translation 0.14 0 0
@@ -57,14 +57,14 @@ DEF the_car Robot {
       children [
         DEF LEFT_STEER_HINGE2 Hinge2Joint {
           jointParameters HingeJointParameters {
-            position 0.05844266048124876
+            position -0.010545485444443527
             axis 0 0 -1
             suspensionSpringConstant 100000
             suspensionDampingConstant 4000
             suspensionAxis 0 0 1
           }
           jointParameters2 JointParameters {
-            position 0.24192398961066347
+            position 7854.211267746587
             axis -1 0 0
             dampingConstant 5
           }
@@ -100,7 +100,8 @@ DEF the_car Robot {
             endPoint Slot {
               type "vehicle wheel"
               endPoint Solid {
-                rotation -0.971892526632972 0.02840807869435875 -0.23370472340086051 0.2488495239473626
+                translation 0 0 3.469446951953614e-18
+                rotation -0.998942550448465 -0.005267215875607111 0.04567315776729036 0.22987472119417454
                 children [
                   DEF WHEEL_SLOT Group {
                   }
@@ -215,14 +216,14 @@ DEF the_car Robot {
       children [
         DEF RIGHT_STEER_HINGE2 Hinge2Joint {
           jointParameters HingeJointParameters {
-            position 0.0687163907666108
+            position 0.002002882391653392
             axis 0 0 -1
             suspensionSpringConstant 100000
             suspensionDampingConstant 4000
             suspensionAxis 0 0 1
           }
           jointParameters2 JointParameters {
-            position 0.20697061970886468
+            position 7810.682327317228
             axis 1 0 0
             dampingConstant 5
           }
@@ -258,7 +259,8 @@ DEF the_car Robot {
             endPoint Slot {
               type "vehicle wheel"
               endPoint Solid {
-                rotation 0.9488535820731969 -0.03261373111964665 -0.31402742607823025 0.2180410748511747
+                translation 0 0 3.469446951953614e-18
+                rotation -0.9999955290747502 0.001001437053233212 0.0028176150089863814 5.6001919924963515
                 children [
                   DEF WHEEL_SLOT Group {
                   }
@@ -373,7 +375,7 @@ DEF the_car Robot {
       children [
         DEF LEFT_REAR_WHEEL_HINGE HingeJoint {
           jointParameters HingeJointParameters {
-            position 0.23781032246432568
+            position 7462.493953634059
             axis -1 0 0
             dampingConstant 5
             suspensionSpringConstant 100000
@@ -400,7 +402,8 @@ DEF the_car Robot {
             endPoint Slot {
               type "vehicle wheel"
               endPoint Solid {
-                rotation -1 0 0 0.23781032246432493
+                translation 0 0 3.469446951953614e-18
+                rotation 1 -7.169407439509625e-17 -9.882869073318051e-17 1.9301912952898088
                 children [
                   DEF WHEEL_SLOT Group {
                   }
@@ -515,7 +518,7 @@ DEF the_car Robot {
       children [
         DEF RIGHT_REAR_WHEEL_HINGE HingeJoint {
           jointParameters HingeJointParameters {
-            position 0.20213755611853246
+            position 7363.498301590257
             dampingConstant 5
             suspensionSpringConstant 100000
             suspensionDampingConstant 4000
@@ -541,7 +544,8 @@ DEF the_car Robot {
             endPoint Slot {
               type "vehicle wheel"
               endPoint Solid {
-                rotation 1 0 0 0.20213755611853143
+                translation 0 0 3.469446951953614e-18
+                rotation -1 1.3942265322611781e-16 3.4790028261650957e-16 0.3948784242182087
                 children [
                   DEF WHEEL_SLOT Group {
                   }
