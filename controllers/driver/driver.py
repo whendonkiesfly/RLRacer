@@ -1,8 +1,11 @@
 import itertools
 import json
 import pickle
-import numpy as np
 import random
+
+from abc import ABC, abstractmethod
+import numpy as np
+
 from vehicle import Driver
 
 
@@ -320,7 +323,7 @@ def load_q(path, include_cp_in_state, checkpoint_count=None):
 def calculate_reward(state, action, crash_penalty=5, finishline_bonus=3, timeout_penalty=5):
     """
     Reward is 1 for crossing a checkpoint with a finishline_bonus multiplier if the checkpoint is the finish line.
-    Reward is taken if the car crashed.
+    Reward is deducted if the car crashed or timed out.
     """
     return int(state.crossing_checkpoint) * (1 + finishline_bonus * int(state.crossed_finishline)) - \
                                 (crash_penalty * int(state.crashed)) - (timeout_penalty * int(state.timed_out))
@@ -397,7 +400,23 @@ class TrajectoryTriplet:
 ################################RL Algorithms################################
 #############################################################################
 
-class SarsaAlgorithm:
+class AbstractRLAlgorithm(ABC):
+    @abstractmethod
+    def get_next_action(self, cycle_info:CycleInfo):
+        """
+        Called to get the next action to be executed.
+        """
+        pass
+
+    @abstractmethod
+    def on_episode_complete(self, final_state, trajectory):
+        """
+        Called once the episode is complete.
+        """
+        pass
+
+
+class SarsaAlgorithm(AbstractRLAlgorithm):
     """
     Implements the SARSA algorithm.
     """
@@ -435,12 +454,12 @@ class SarsaAlgorithm:
 
             return next_action
 
-    def update_q(self, final_state, trajectory):
+    def on_episode_complete(self, final_state, trajectory):
         cycle_info = CycleInfo(final_state, trajectory, False)
         self.get_next_action(cycle_info)
 
     
-class MCAlgorithm:
+class MCAlgorithm(AbstractRLAlgorithm):
     """
     Algorithm similar to first visit MC except that all visits are used for updating q.
     """
@@ -462,7 +481,7 @@ class MCAlgorithm:
         return pull_action_from_q(self.q_matrix, cycle_info.state, epsilon, self.include_checkpoint_in_state)
 
 
-    def update_q(self, final_state, trajectory):
+    def on_episode_complete(self, final_state, trajectory):
         #Iterate backwards through the trajectory and calculate the reward for each state.
         #Go backwards so the reward is attributed to the first instance of the state.
         state_rewards = {}
@@ -518,7 +537,7 @@ def run(car, algo, output_base_path, termination_value=1000, max_checkpoint_time
 
     results_output_path = output_base_path + "_results.txt"
 
-    initialize_file(output_file_path)
+    initialize_file(results_output_path)
 
     while car.step() != -1:
         #Gather cycle information
@@ -560,7 +579,7 @@ def run(car, algo, output_base_path, termination_value=1000, max_checkpoint_time
             #Finalize things for this race.
             race_counter += 1
             final_state = car.get_state(timed_out)
-            algo.update_q(final_state, trajectory)
+            algo.on_episode_complete(final_state, trajectory)
             missing_checkpoints = len(car.checkpoints) - car.checkpoint_count
             save_info(results_output_path, race_counter, race_time, missing_checkpoints)  # NOTE: Saved reward is that of the whole race and not a single episode.
             save_q(output_base_path + "_q.pickle", algo.q_matrix)
@@ -663,10 +682,3 @@ if __name__ == "__main__":
     car.stop()
     print("All tests complete.")
 
-
-
-
-
-#Set main to run over different parameters. Also sometimes with same parameters.
-#new tracks. Mirror first and make a new one
-##does the MC algorithm fit with something we learned in class??????
