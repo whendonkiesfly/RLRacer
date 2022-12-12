@@ -617,67 +617,120 @@ if __name__ == "__main__":
     run_count = 3
 
 
+    track_number = 1
+
 
     #MC algorithm.
+    if track_number == 1:
+        print("Running experiments 'A1'")
+        for i in range(run_count):
+            output_file_path = f"c:\\temp\\results_track_1\\firstvisitmc_noCP_{i}"
+            q_matrix = generate_random_q(lidar_laser_count, None)
+            first_visit = True
+            algo = MCAlgorithm(mc_step_size, epsilon, discount_factor, q_matrix, first_visit)
+            run(car, algo, output_file_path, race_count)
 
-    print("Running experiments 'A'")
-    for i in range(run_count):
-        output_file_path = f"c:\\temp\\results_track_1\\firstvisitmc_noCP_{i}"
-        q_matrix = generate_random_q(lidar_laser_count, None)
-        first_visit = True
-        algo = MCAlgorithm(mc_step_size, epsilon, discount_factor, q_matrix, first_visit)
-        run(car, algo, output_file_path, race_count)
+        print("Running experiments 'B1'")
+        for i in range(run_count):
+            output_file_path = f"c:\\temp\\results_track_1\\allvisitmc_noCP_{i}"
+            q_matrix = generate_random_q(lidar_laser_count, None)
+            first_visit = False
+            algo = MCAlgorithm(mc_step_size, epsilon, discount_factor, q_matrix, first_visit)
+            run(car, algo, output_file_path, race_count)
 
-    print("Running experiments 'B'")
-    for i in range(run_count):
-        output_file_path = f"c:\\temp\\results_track_1\\allvisitmc_noCP_{i}"
-        q_matrix = generate_random_q(lidar_laser_count, None)
-        first_visit = False
-        algo = MCAlgorithm(mc_step_size, epsilon, discount_factor, q_matrix, first_visit)
-        run(car, algo, output_file_path, race_count)
+        print("Running experiments 'C1'")
+        for i in range(run_count):
+            output_file_path = f"c:\\temp\\results_track_1\\firstvisitmc_withCP_{i}"
+            q_matrix = generate_random_q(lidar_laser_count, cp_count)
+            first_visit = True
+            algo = MCAlgorithm(mc_step_size, epsilon, discount_factor, q_matrix, first_visit)
+            run(car, algo, output_file_path, race_count)
 
-    print("Running experiments 'C'")
-    for i in range(run_count):
-        output_file_path = f"c:\\temp\\results_track_1\\firstvisitmc_withCP_{i}"
-        q_matrix = generate_random_q(lidar_laser_count, cp_count)
-        first_visit = True
-        algo = MCAlgorithm(mc_step_size, epsilon, discount_factor, q_matrix, first_visit)
-        run(car, algo, output_file_path, race_count)
+        print("Running experiments 'D1'")
+        for i in range(run_count):
+            output_file_path = f"c:\\temp\\results_track_1\\allvisitmc_withCP_{i}"
+            q_matrix = generate_random_q(lidar_laser_count, cp_count)
+            first_visit = False
+            algo = MCAlgorithm(mc_step_size, epsilon, discount_factor, q_matrix, first_visit)
+            run(car, algo, output_file_path, race_count)
 
-    print("Running experiments 'D'")
-    for i in range(run_count):
-        output_file_path = f"c:\\temp\\results_track_1\\allvisitmc_withCP_{i}"
-        q_matrix = generate_random_q(lidar_laser_count, cp_count)
-        first_visit = False
-        algo = MCAlgorithm(mc_step_size, epsilon, discount_factor, q_matrix, first_visit)
-        run(car, algo, output_file_path, race_count)
+        print("Running experiments 'E1'")
+        for i in range(run_count):
+            output_file_path = f"c:\\temp\\results_track_1\\allvisitmc_withCP_relearn_{i}"
+            q_path = f"c:\\temp\\results_track_1\\allvisitmc_noCP_{i}_q.pickle"
+            q_matrix = load_q(q_path, True, cp_count)
+            first_visit = False
+            algo = MCAlgorithm(mc_step_size, epsilon, discount_factor, q_matrix, first_visit)
+            run(car, algo, output_file_path, race_count)
 
-    print("Running experiments 'E'")
-    for i in range(run_count):
-        output_file_path = f"c:\\temp\\results_track_1\\allvisitmc_withCP_relearn_{i}"
-        q_path = f"c:\\temp\\results_track_1\\allvisitmc_noCP_{i}"
-        q_matrix = load_q(q_path, True, cp_count)
-        first_visit = False
-        algo = MCAlgorithm(mc_step_size, epsilon, discount_factor, q_matrix, first_visit)
-        run(car, algo, output_file_path, race_count)
+        print("Running experiments 'F1'")
+        for i in range(run_count):
+            output_file_path = f"c:\\temp\\results_track_1\\firstvisitmc_withCP_relearn_{i}"
+            q_path = f"c:\\temp\\results_track_1\\firstvisitmc_noCP_{i}_q.pickle"
+            q_matrix = load_q(q_path, True, cp_count)
+            first_visit = False
+            algo = MCAlgorithm(mc_step_size, epsilon, discount_factor, q_matrix, first_visit)
+            run(car, algo, output_file_path, race_count)
 
 
-    #SARSA
+        #SARSA
 
-    print("Running experiments 'F'")
-    for i in range(run_count):
-        output_file_path = f"c:\\temp\\results_track_1\\sarsa_withCP_{i}"
-        q_matrix = generate_random_q(lidar_laser_count, cp_count)
-        algo = SarsaAlgorithm(mc_step_size, epsilon, discount_factor, q_matrix)
-        run(car, algo, output_file_path, race_count)
+        print("Running experiments 'F1'")
+        for i in range(run_count):
+            output_file_path = f"c:\\temp\\results_track_1\\sarsa_withCP_{i}"
+            q_matrix = generate_random_q(lidar_laser_count, cp_count)
+            algo = SarsaAlgorithm(mc_step_size, epsilon, discount_factor, q_matrix)
+            run(car, algo, output_file_path, race_count)
 
-    print("Running experiments 'G'")
-    for i in range(run_count):
-        output_file_path = f"c:\\temp\\results_track_1\\sarsa_noCP_{i}"
-        q_matrix = generate_random_q(lidar_laser_count, None)
-        algo = SarsaAlgorithm(mc_step_size, epsilon, discount_factor, q_matrix)
-        run(car, algo, output_file_path, race_count)
+        print("Running experiments 'G1'")
+        for i in range(run_count):
+            output_file_path = f"c:\\temp\\results_track_1\\sarsa_noCP_{i}"
+            q_matrix = generate_random_q(lidar_laser_count, None)
+            algo = SarsaAlgorithm(mc_step_size, epsilon, discount_factor, q_matrix)
+            run(car, algo, output_file_path, race_count)
 
+    elif track_number == 2:
+        print("Running experiments 'A2'")
+        for i in range(run_count):
+            output_file_path = f"c:\\temp\\results_track_2\\firstvisitmc_withCP_{i}"
+            q_matrix = generate_random_q(lidar_laser_count, cp_count)
+            first_visit = True
+            algo = MCAlgorithm(mc_step_size, epsilon, discount_factor, q_matrix, first_visit)
+            run(car, algo, output_file_path, race_count)
+
+        print("Running experiments 'B2'")
+        for i in range(run_count):
+            output_file_path = f"c:\\temp\\results_track_2\\firstvisitmc_noCP_{i}"
+            q_matrix = generate_random_q(lidar_laser_count, None)
+            first_visit = True
+            algo = MCAlgorithm(mc_step_size, epsilon, discount_factor, q_matrix, first_visit)
+            run(car, algo, output_file_path, race_count)
+
+        print("Running experiments 'C2'")
+        for i in range(run_count):
+            output_file_path = f"c:\\temp\\results_track_2\\firstvisitmc_withCP_transfer_{i}"
+            q_path = f"c:\\temp\\results_track_1\\firstvisitmc_noCP_{i}_q.pickle"
+            q_matrix = load_q(q_path, True, cp_count)
+            first_visit = True
+            algo = MCAlgorithm(mc_step_size, epsilon, discount_factor, q_matrix, first_visit)
+            run(car, algo, output_file_path, race_count)
+
+        print("Running experiments 'D2'")
+        for i in range(run_count):
+            output_file_path = f"c:\\temp\\results_track_2\\firstvisitmc_noCP_transfer_{i}"
+            q_path = f"c:\\temp\\results_track_1\\firstvisitmc_noCP_{i}_q.pickle"
+            q_matrix = load_q(q_path, False)
+            first_visit = True
+            algo = MCAlgorithm(mc_step_size, epsilon, discount_factor, q_matrix, first_visit)
+            run(car, algo, output_file_path, race_count)
+
+
+
+
+
+
+    else:
+        raise ValueError("Invalid track number")
 
     car.stop()
     print("All tests complete.")

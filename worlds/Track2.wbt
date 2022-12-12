@@ -7,8 +7,8 @@ EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/project
 WorldInfo {
 }
 Viewpoint {
-  orientation 0.07216246757034604 0.9960557916160163 0.051627882605718836 1.4651129778888778
-  position -1.3621101485832123 -0.6312557337387104 11.499639711950556
+  orientation 0.45367175177605773 0.59183273388847 -0.6662701829877596 1.4064262299637618
+  position -4.1196734676075355 2.5404826362358457 7.317505869813363
 }
 TexturedBackground {
 }
@@ -16,6 +16,7 @@ TexturedBackgroundLight {
 }
 DEF floor RectangleArena {
   floorSize 5 5
+  wallHeight 0.0001
 }
 Solid {
   rotation 1 0 0 1.5708
@@ -27,7 +28,7 @@ Solid {
       }
       geometry Mesh {
         url [
-          "Track1.STL"
+          "Track2.STL"
         ]
       }
     }
@@ -100,8 +101,8 @@ DEF the_car Robot {
             endPoint Slot {
               type "vehicle wheel"
               endPoint Solid {
-                translation 7.800016274768305e-33 1.5407439555097887e-33 3.4694469519534982e-18
-                rotation -0.9989425504484649 -0.005267215875607139 0.045673157767291674 0.22987472119417454
+                translation 0 0 3.469446951953614e-18
+                rotation -0.998942550448465 -0.005267215875607111 0.04567315776729036 0.22987472119417454
                 children [
                   DEF WHEEL_SLOT Group {
                   }
@@ -259,7 +260,7 @@ DEF the_car Robot {
             endPoint Slot {
               type "vehicle wheel"
               endPoint Solid {
-                translation -3.736755481941953e-33 1.560003254953661e-32 3.469446951953619e-18
+                translation 0 0 3.469446951953614e-18
                 rotation -0.9999955290747502 0.001001437053233212 0.0028176150089863814 5.6001919924963515
                 children [
                   DEF WHEEL_SLOT Group {
@@ -402,8 +403,8 @@ DEF the_car Robot {
             endPoint Slot {
               type "vehicle wheel"
               endPoint Solid {
-                translation 0 7.703719777548943e-33 3.4694469519535553e-18
-                rotation 1 0 0 1.9301912952898088
+                translation 0 0 3.469446951953614e-18
+                rotation 1 -7.169407439509625e-17 -9.882869073318051e-17 1.9301912952898088
                 children [
                   DEF WHEEL_SLOT Group {
                   }
@@ -544,8 +545,8 @@ DEF the_car Robot {
             endPoint Slot {
               type "vehicle wheel"
               endPoint Solid {
-                translation 0 2.311115933264683e-33 3.46944695195359e-18
-                rotation -1 0 0 0.3948784242182086
+                translation 0 0 3.469446951953614e-18
+                rotation -1 1.3942265322611781e-16 3.4790028261650957e-16 0.3948784242182087
                 children [
                   DEF WHEEL_SLOT Group {
                   }
@@ -725,7 +726,7 @@ DEF the_car Robot {
 DEF CHECKPOINTS Group {
   children [
     Solid {
-      translation -0.35 1.88 0.84
+      translation -0.35 1.69 0.84
       children [
         Shape {
           appearance PBRAppearance {
@@ -741,8 +742,8 @@ DEF CHECKPOINTS Group {
       name "Checkpoint 1"
     }
     Solid {
-      translation 1.27 1.32 0.84
-      rotation 0 0 1 -0.785395307179586
+      translation 1.50312 0.89312 0.84
+      rotation 0 0 1 -1.5707953071795862
       children [
         Shape {
           appearance PBRAppearance {
@@ -755,8 +756,8 @@ DEF CHECKPOINTS Group {
       name "Checkpoint 2"
     }
     Solid {
-      translation 1.171 0.330062 0.82
-      rotation 0 0 1 0.785401
+      translation 1.43632 -0.69572 0.82
+      rotation 0 0 1 1.5708
       children [
         Shape {
           appearance PBRAppearance {
@@ -769,7 +770,7 @@ DEF CHECKPOINTS Group {
       name "Checkpoint 3"
     }
     Solid {
-      translation 0.314911 0.328308 0.87
+      translation 0.17881 -1.26743 0.87
       rotation 0 0 1 2.618
       children [
         Shape {
@@ -783,8 +784,8 @@ DEF CHECKPOINTS Group {
       name "Checkpoint 4"
     }
     Solid {
-      translation -1.0527 0.159508 0.91
-      rotation 0 0 1 -2.0943853071795866
+      translation -0.92424 -0.237981 0.91
+      rotation 0 0 1 2.618
       children [
         Shape {
           appearance PBRAppearance {
@@ -797,8 +798,8 @@ DEF CHECKPOINTS Group {
       name "Checkpoint 5"
     }
     Solid {
-      translation -0.919539 -1.12981 0.9
-      rotation 0 0 1 2.618
+      translation -1.91601 -0.521204 0.9
+      rotation 0 0 1 -1.8325853071795866
       children [
         Shape {
           appearance PBRAppearance {
@@ -811,8 +812,8 @@ DEF CHECKPOINTS Group {
       name "Checkpoint 6"
     }
     Solid {
-      translation 0.0875079 -1.42867 0.84
-      rotation 0 0 1 2.8798
+      translation -1.93 -2.1578 0.84
+      rotation 0 0 1 -1.5707853071795865
       children [
         Shape {
           appearance PBRAppearance {
