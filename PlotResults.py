@@ -72,15 +72,13 @@ def plot_allvisit_with_vs_without_cp():
     without_cp_missing_cps = load_missing_checkpoints(without_cp_datasets)
 
     _, ax1 = plt.subplots()
-    ax1.set(xlabel="Race #", ylabel="Missed Checkpoints", title="All-Visit Comparison")
+    ax1.set(xlabel="Race #", ylabel="Missed Checkpoints / Race Time (s)", title="All-Visit Comparison")
     plot_vals(ax1, *with_cp_missing_cps, "green", "lime", "Missing CPs with CP")
     plot_vals(ax1, *without_cp_missing_cps, "blue", "cyan", "Missing CPs without CP")
 
     with_cp_race_times = load_race_times(with_cp_datasets)
     without_cp_race_times = load_race_times(without_cp_datasets)
 
-    ax2 = ax1.twinx()
-    ax2.set(ylabel="Race Time")
     plot_vals(ax1, *with_cp_race_times, "red", "orange", "Race Time with CP")
     plot_vals(ax1, *without_cp_race_times, "black", "gray", "Race Time without CP")
     ax1.legend()
@@ -104,15 +102,13 @@ def plot_firstvisit_with_vs_without_cp():
     without_cp_missing_cps = load_missing_checkpoints(without_cp_datasets)
 
     _, ax1 = plt.subplots()
-    ax1.set(xlabel="Race #", ylabel="Missed Checkpoints", title="First-Visit Comparison")
+    ax1.set(xlabel="Race #", ylabel="Missed Checkpoints / Race Time (s)", title="First-Visit Comparison")
     plot_vals(ax1, *with_cp_missing_cps, "green", "lime", "Missing CPs with CP")
     plot_vals(ax1, *without_cp_missing_cps, "blue", "cyan", "Missing CPs without CP")
 
     with_cp_race_times = load_race_times(with_cp_datasets)
     without_cp_race_times = load_race_times(without_cp_datasets)
 
-    ax2 = ax1.twinx()
-    ax2.set(ylabel="Race Time")
     plot_vals(ax1, *with_cp_race_times, "red", "orange", "Race Time with CP")
     plot_vals(ax1, *without_cp_race_times, "black", "gray", "Race Time without CP")
     ax1.legend()
@@ -139,15 +135,13 @@ def plot_allvisit_vs_firstvisit_nocp():
     allvisit_missing_cps = load_missing_checkpoints(allvisit_datasets)
 
     _, ax1 = plt.subplots()
-    ax1.set(xlabel="Race #", ylabel="Missed Checkpoints", title="First-Visit vs. All-Visit")
+    ax1.set(xlabel="Race #", ylabel="Missed Checkpoints / Race Time (s)", title="First-Visit vs. All-Visit")
     plot_vals(ax1, *allvisit_missing_cps, "green", "lime", "All-Visit Missing CP")
     plot_vals(ax1, *firstvisit_missing_cps, "blue", "cyan", "First-Visit Missing CP")
 
     firstvisit_race_times = load_race_times(firstvisit_datasets)
     allvisit_race_times = load_race_times(allvisit_datasets)
 
-    ax2 = ax1.twinx()
-    ax2.set(ylabel="Race Time")
     plot_vals(ax1, *firstvisit_race_times, "red", "orange", "First-Visit Race Time")
     plot_vals(ax1, *allvisit_race_times, "black", "gray", "All-Visit Race Time")
     ax1.legend()
@@ -171,15 +165,13 @@ def plot_sarsa_vs_firstvisit_nocp():
     sarsa_missing_cps = load_missing_checkpoints(sarsa_datasets)
 
     _, ax1 = plt.subplots()
-    ax1.set(xlabel="Race #", ylabel="Missed Checkpoints", title="First-Visit vs. SARSA")
+    ax1.set(xlabel="Race #", ylabel="Missed Checkpoints / Race Time (s)", title="First-Visit vs. SARSA")
     plot_vals(ax1, *sarsa_missing_cps, "green", "lime", "SARSA Missing CP")
     plot_vals(ax1, *firstvisit_missing_cps, "blue", "cyan", "First-Visit Missing CP")
 
     firstvisit_race_times = load_race_times(firstvisit_datasets)
     sarsa_race_times = load_race_times(sarsa_datasets)
 
-    ax2 = ax1.twinx()
-    ax2.set(ylabel="Race Time")
     plot_vals(ax1, *firstvisit_race_times, "red", "orange", "First-Visit Race Time")
     plot_vals(ax1, *sarsa_race_times, "black", "gray", "SARSA Race Time")
     ax1.legend()
@@ -204,15 +196,13 @@ def plot_firstvisit_nocp_vs_relearn_withcp():
     relearned_missing_cps = load_missing_checkpoints(relearned_datasets)
 
     _, ax1 = plt.subplots()
-    ax1.set(xlabel="Race #", ylabel="Missed Checkpoints", title="First-Visit without CP-State vs Relearned with CP-State")
+    ax1.set(xlabel="Race #", ylabel="Missed Checkpoints / Race Time (s)", title="First-Visit without CP-State vs Relearned with CP-State")
     plot_vals(ax1, *relearned_missing_cps, "green", "lime", "Relearned Missing CP")
     plot_vals(ax1, *firstvisit_missing_cps, "blue", "cyan", "First-Visit Missing CP")
 
     firstvisit_race_times = load_race_times(firstvisit_datasets)
     relearned_race_times = load_race_times(relearned_datasets)
 
-    ax2 = ax1.twinx()
-    ax2.set(ylabel="Race Time")
     plot_vals(ax1, *firstvisit_race_times, "red", "orange", "First-Visit Race Time")
     plot_vals(ax1, *relearned_race_times, "black", "gray", "Relearned Race Time")
     ax1.legend()
@@ -237,15 +227,13 @@ def plot_track2_scratch_withcp_vs_relearned_withcp():
     transfer_missing_cps = load_missing_checkpoints(transfer_datasets)
 
     _, ax1 = plt.subplots()
-    ax1.set(xlabel="Race #", ylabel="Missed Checkpoints", title="Track 2 Transfer vs From Scratch")
+    ax1.set(xlabel="Race #", ylabel="Missed Checkpoints / Race Time (s)", title="Track 2 Transfer vs From Scratch")
     plot_vals(ax1, *transfer_missing_cps, "green", "lime", "Transfer Missing CP")
     plot_vals(ax1, *from_scratch_missing_cps, "blue", "cyan", "From Scratch Missing CP")
 
     from_scratch_race_times = load_race_times(from_scratch_datasets)
     transfer_race_times = load_race_times(transfer_datasets)
 
-    ax2 = ax1.twinx()
-    ax2.set(ylabel="Race Time")
     plot_vals(ax1, *from_scratch_race_times, "red", "orange", "From Scratch Race Time")
     plot_vals(ax1, *transfer_race_times, "black", "gray", "Transfer Race Time")
     ax1.legend()
